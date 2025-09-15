@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theme Update Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        #log { background: #f8f9fa; padding: 15px; border-radius: 4px; height: 300px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Theme Update Test</h1>
+        
+        <div class="section">
+            <h2>Test Status</h2>
+            <div id="status" class="status info">Ready to test theme updates...</div>
+        </div>
+
+        <div class="section">
+            <h2>Actions</h2>
+            <button onclick="testThemeUpdate()">Simulate Theme Update</button>
+            <button onclick="testDefaultTheme()">Simulate Set Default Theme</button>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+
+        <div class="section">
+            <h2>Event Log</h2>
+            <div id="log"></div>
+        </div>
+    </div>
+
+    <script>
+        // Import theme events functions (simulated)
+        const THEME_EVENTS = {
+            THEME_UPDATED: 'theme-updated',
+            THEME_SET_DEFAULT: 'theme-set-default'
+        };
+
+        function broadcastThemeUpdate(event) {
+            if (typeof window === 'undefined') return;
+            
+            const eventData = {
+                ...event,
+                timestamp: Date.now()
+            };
+
+            localStorage.setItem('theme-event', JSON.stringify(eventData));
+            
+            setTimeout(() => {
+                localStorage.removeItem('theme-event');
+            }, 100);
+
+            window.dispatchEvent(new CustomEvent('theme-update', { detail: eventData }));
+            
+            log('Theme update broadcasted:', eventData);
+        }
+
+        function listenForThemeUpdates(callback) {
+            if (typeof window === 'undefined') return () => {};
+
+            const handleStorageChange = (e) => {
+                if (e.key === 'theme-event' && e.newValue) {
+                    try {
+                        const eventData = JSON.parse(e.newValue);
+                        log('Theme update received from storage:', eventData);
+                        callback(eventData);
+                    } catch (error) {
+                        log('Failed to parse theme event:', error);
+                    }
+                }
+            };
+
+            const handleCustomEvent = (e) => {
+                log('Theme update received from custom event:', e.detail);
+                callback(e.detail);
+            };
+
+            window.addEventListener('storage', handleStorageChange);
+            window.addEventListener('theme-update', handleCustomEvent);
+
+            return () => {
+                window.removeEventListener('storage', handleStorageChange);
+                window.removeEventListener('theme-update', handleCustomEvent);
+            };
+        }
+
+        // Initialize listener
+        let cleanup;
+        window.onload = function() {
+            cleanup = listenForThemeUpdates((event) => {
+                log('✅ Theme event received:', event);
+                updateStatus('success', `Theme event received: ${event.type} - ${event.themeName}`);
+                
+                if (event.type === THEME_EVENTS.THEME_UPDATED) {
+                    log('🔄 Theme updated event processed');
+                } else if (event.type === THEME_EVENTS.THEME_SET_DEFAULT) {
+                    log('⭐ Default theme set event processed');
+                }
+            });
+            
+            log('🎧 Theme update listener initialized');
+        };
+
+        window.onbeforeunload = function() {
+            if (cleanup) cleanup();
+        };
+
+        function testThemeUpdate() {
+            log('🧪 Testing theme update...');
+            broadcastThemeUpdate({
+                type: THEME_EVENTS.THEME_UPDATED,
+                themeId: 'test-theme-123',
+                themeName: 'Test Theme',
+                isDefault: false
+            });
+            updateStatus('info', 'Theme update test triggered');
+        }
+
+        function testDefaultTheme() {
+            log('🧪 Testing default theme set...');
+            broadcastThemeUpdate({
+                type: THEME_EVENTS.THEME_SET_DEFAULT,
+                themeId: 'default-theme-456',
+                themeName: 'Default Theme',
+                isDefault: true
+            });
+            updateStatus('info', 'Default theme test triggered');
+        }
+
+        function log(message, data = null) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            
+            if (data) {
+                logDiv.innerHTML += `${logEntry}\n${JSON.stringify(data, null, 2)}\n\n`;
+            } else {
+                logDiv.innerHTML += `${logEntry}\n`;
+            }
+            
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateStatus(type, message) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+            updateStatus('info', 'Log cleared');
+        }
+    </script>
+</body>
+</html>

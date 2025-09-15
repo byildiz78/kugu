@@ -1,0 +1,289 @@
+/* Admin-only CSS - Completely isolated from mobile */
+
+/* Import Tailwind for admin only */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Admin-specific root variables */
+:root {
+  /* Tailwind's default CSS variables for admin */
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+  
+  /* Admin theme - Fixed values, never dynamic */
+  --admin-color-primary: #3b82f6 !important;
+  --admin-color-secondary: #8b5cf6 !important;
+  --admin-color-accent: #f59e0b !important;
+  --admin-color-background: #f9fafb !important;
+  --admin-color-surface: #ffffff !important;
+  --admin-color-text-primary: #111827 !important;
+  --admin-color-text-secondary: #6b7280 !important;
+}
+
+/* Force admin colors - but avoid wildcard selector that breaks components */
+.admin-app {
+  /* Override any potential mobile theme conflicts */
+  --color-primary: var(--admin-color-primary) !important;
+  --color-secondary: var(--admin-color-secondary) !important;
+  --color-accent: var(--admin-color-accent) !important;
+  --color-background: var(--admin-color-background) !important;
+  --color-surface: var(--admin-color-surface) !important;
+  --color-text-primary: var(--admin-color-text-primary) !important;
+  --color-text-secondary: var(--admin-color-text-secondary) !important;
+}
+
+/* Admin layout styles */
+.admin-app {
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  background-color: var(--admin-color-background);
+  color: var(--admin-color-text-primary);
+  position: relative;
+  /* Removed isolation and contain - they were blocking portals */
+}
+
+/* Override any mobile theme variables that might leak */
+.admin-app {
+  --mobile-color-primary: initial !important;
+  --mobile-color-secondary: initial !important;
+  --mobile-color-accent: initial !important;
+  --mobile-color-background: initial !important;
+  --mobile-color-surface: initial !important;
+  --mobile-color-text-primary: initial !important;
+  --mobile-color-text-secondary: initial !important;
+}
+
+/* NUCLEAR OPTION: Reset everything for dropdowns */
+* {
+  /* Reset any potential height constraints */
+}
+
+/* Emergency portal fix */
+[data-radix-portal],
+[data-radix-popper-content-wrapper],
+[data-portal-container],
+div[data-radix-portal] {
+  z-index: 99999 !important;
+  position: fixed !important;
+}
+
+/* BRUTE FORCE: Override everything */
+[data-radix-select-content],
+[data-radix-dropdown-menu-content] {
+  all: unset !important;
+  display: block !important;
+  position: fixed !important;
+  z-index: 99999 !important;
+  background: white !important;
+  border: 1px solid #ccc !important;
+  border-radius: 4px !important;
+  padding: 4px !important;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+  min-width: 120px !important;
+  max-height: 200px !important;
+  overflow-y: auto !important;
+  font-family: system-ui !important;
+  font-size: 14px !important;
+}
+
+[data-radix-select-item],
+[data-radix-dropdown-menu-item] {
+  all: unset !important;
+  display: block !important;
+  padding: 8px 12px !important;
+  cursor: pointer !important;
+  color: black !important;
+  min-height: 24px !important;
+  line-height: 1.2 !important;
+}
+
+[data-radix-select-item]:hover,
+[data-radix-dropdown-menu-item]:hover {
+  background: #f0f0f0 !important;
+}
+
+/* Clean slate - simplified approach */
+
+/* Ensure admin components use admin colors */
+.admin-app .bg-primary { background-color: var(--admin-color-primary) !important; }
+.admin-app .text-primary { color: var(--admin-color-primary) !important; }
+.admin-app .border-primary { border-color: var(--admin-color-primary) !important; }
+
+/* Ensure buttons work correctly - override any conflicting styles */
+.admin-app button[disabled] {
+  pointer-events: none !important;
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+}
+
+.admin-app button:not([disabled]) {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* Ensure button interactivity is preserved */
+.admin-app button:not([disabled]):hover {
+  opacity: 0.9;
+  transition: opacity 0.2s;
+}
+
+.admin-app button:not([disabled]):active {
+  transform: scale(0.98);
+}
+
+/* Fix all Radix UI dropdown menus in admin */
+.admin-app [data-radix-popper-content-wrapper] {
+  z-index: 9999 !important;
+  position: fixed !important;
+}
+
+.admin-app [data-radix-dropdown-menu-content] {
+  z-index: 9999 !important;
+  background: white !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 6px !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  padding: 4px !important;
+  min-width: 120px !important;
+  max-height: 300px !important;
+  overflow-y: auto !important;
+}
+
+.admin-app [data-radix-dropdown-menu-item] {
+  padding: 8px 12px !important;
+  border-radius: 4px !important;
+  font-size: 14px !important;
+  cursor: pointer !important;
+  color: var(--admin-color-text-primary) !important;
+  display: flex !important;
+  align-items: center !important;
+  user-select: none !important;
+}
+
+.admin-app [data-radix-dropdown-menu-item]:hover {
+  background: #f3f4f6 !important;
+  outline: none !important;
+}
+
+.admin-app [data-radix-dropdown-menu-item][data-highlighted] {
+  background: var(--admin-color-primary) !important;
+  color: white !important;
+}
+
+.admin-app [data-radix-dropdown-menu-item][data-disabled] {
+  opacity: 0.5 !important;
+  pointer-events: none !important;
+}
+
+/* Fix dropdown triggers */
+.admin-app [data-radix-dropdown-menu-trigger] {
+  background: transparent !important;
+  border: 1px solid #d1d5db !important;
+  color: var(--admin-color-text-primary) !important;
+  cursor: pointer !important;
+}
+
+.admin-app [data-radix-dropdown-menu-trigger]:hover {
+  background: #f9fafb !important;
+}
+
+.admin-app [data-radix-dropdown-menu-trigger][data-state="open"] {
+  background: #f3f4f6 !important;
+}
+
+/* Theme preview isolation - prevent theme previews from affecting admin UI */
+.admin-app .theme-preview {
+  /* Create a separate rendering context for theme previews */
+  isolation: isolate;
+  transform: translateZ(0); /* Force new stacking context */
+  contain: style; /* Contain CSS changes within preview */
+}
+
+/* Prevent any mobile theme variables from affecting admin */
+.admin-app {
+  --mobile-color-primary: initial !important;
+  --mobile-color-secondary: initial !important;
+  --mobile-color-accent: initial !important;
+  --mobile-color-background: initial !important;
+  --mobile-color-surface: initial !important;
+  --mobile-color-text-primary: initial !important;
+  --mobile-color-text-secondary: initial !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+  }
+  
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground;
+  }
+}

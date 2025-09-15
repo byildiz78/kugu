@@ -1,0 +1,554 @@
+/* Global styles - Only for root layout and shared components */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+  }
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Swagger UI Customizations */
+.api-docs .swagger-ui {
+  font-family: inherit;
+}
+
+.api-docs .swagger-ui .topbar {
+  display: none;
+}
+
+.api-docs .swagger-ui .info {
+  margin: 20px 0;
+}
+
+.api-docs .swagger-ui .scheme-container {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 10px;
+  margin: 20px 0;
+  border-radius: 8px;
+}
+
+.api-docs .swagger-ui .auth-wrapper {
+  padding: 20px;
+  background: #f1f5f9;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+.api-docs .swagger-ui .authorization__btn {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.api-docs .swagger-ui .authorization__btn:hover {
+  background: #2563eb;
+}
+
+.api-docs .swagger-ui .opblock.opblock-get {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.api-docs .swagger-ui .opblock.opblock-post {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.api-docs .swagger-ui .opblock.opblock-put {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.api-docs .swagger-ui .opblock.opblock-delete {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.api-docs .swagger-ui .opblock-summary-method {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.api-docs .swagger-ui .btn.authorize {
+  background: #16a34a;
+  color: white;
+  border: none;
+}
+
+.api-docs .swagger-ui .btn.authorize:hover {
+  background: #15803d;
+}
+
+.api-docs .swagger-ui .modal-ux {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.api-docs .swagger-ui .modal-ux-content {
+  border-radius: 8px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Mobile Theme Variables */
+.mobile-app {
+  /* Default theme values - will be overridden by JavaScript */
+  --color-primary: #3b82f6;
+  --color-primary-dark: #2563eb;
+  --color-primary-light: #60a5fa;
+  --color-secondary: #8b5cf6;
+  --color-accent: #f59e0b;
+  --color-background: #f9fafb;
+  --color-surface: #ffffff;
+  --color-error: #ef4444;
+  --color-warning: #f59e0b;
+  --color-success: #10b981;
+  --color-info: #3b82f6;
+  --color-text-primary: #111827;
+  --color-text-secondary: #6b7280;
+  --color-text-disabled: #d1d5db;
+  font-family: Inter, system-ui, sans-serif;
+  --font-family-heading: 'Inter, system-ui, sans-serif';
+  --border-radius: 0.5rem;
+  --shadow-style: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  
+  /* Mobile app isolation */
+  isolation: isolate;
+  position: relative;
+  z-index: 1;
+}
+
+/* Admin App - Minimal Isolation */
+.admin-app {
+  /* Simple isolation to prevent mobile theme interference */
+  isolation: isolate;
+}
+
+
+/* Scope theme utility classes to mobile app only */
+.mobile-app .bg-theme-primary { background-color: var(--color-primary); }
+.mobile-app .bg-theme-primary-dark { background-color: var(--color-primary-dark); }
+.mobile-app .bg-theme-primary-light { background-color: var(--color-primary-light); }
+.mobile-app .bg-theme-secondary { background-color: var(--color-secondary); }
+.mobile-app .bg-theme-accent { background-color: var(--color-accent); }
+.mobile-app .bg-theme-surface { background-color: var(--color-surface); }
+.mobile-app .bg-theme-background { background-color: var(--color-background); }
+.mobile-app .bg-theme-success { background-color: var(--color-success); }
+.mobile-app .bg-theme-warning { background-color: var(--color-warning); }
+.mobile-app .bg-theme-error { background-color: var(--color-error); }
+.mobile-app .bg-theme-info { background-color: var(--color-info); }
+
+.mobile-app .text-theme-primary { color: var(--color-primary); }
+.mobile-app .text-theme-primary-dark { color: var(--color-primary-dark); }
+.mobile-app .text-theme-primary-light { color: var(--color-primary-light); }
+.mobile-app .text-theme-secondary { color: var(--color-secondary); }
+.mobile-app .text-theme-accent { color: var(--color-accent); }
+.mobile-app .text-theme-text-primary { color: var(--color-text-primary); }
+.mobile-app .text-theme-text-secondary { color: var(--color-text-secondary); }
+.mobile-app .text-theme-text-disabled { color: var(--color-text-disabled); }
+.mobile-app .text-theme-success { color: var(--color-success); }
+.mobile-app .text-theme-warning { color: var(--color-warning); }
+.mobile-app .text-theme-error { color: var(--color-error); }
+.mobile-app .text-theme-info { color: var(--color-info); }
+
+.mobile-app .border-theme-primary { border-color: var(--color-primary); }
+.mobile-app .border-theme-primary-dark { border-color: var(--color-primary-dark); }
+.mobile-app .border-theme-primary-light { border-color: var(--color-primary-light); }
+.mobile-app .border-theme-secondary { border-color: var(--color-secondary); }
+.mobile-app .border-theme-accent { border-color: var(--color-accent); }
+.mobile-app .border-theme-success { border-color: var(--color-success); }
+.mobile-app .border-theme-warning { border-color: var(--color-warning); }
+.mobile-app .border-theme-error { border-color: var(--color-error); }
+.mobile-app .border-theme-info { border-color: var(--color-info); }
+
+.mobile-app .rounded-theme { border-radius: var(--border-radius); }
+.mobile-app .shadow-theme { box-shadow: var(--shadow-style); }
+.mobile-app .font-theme { font-family: var(--font-family); }
+.mobile-app .font-theme-heading { font-family: var(--font-family-heading); }
+
+/* Micro-interactions and animations */
+@keyframes ripple {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes bounce-x {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(4px);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Scope animations to mobile app only */
+.mobile-app .animate-fade-in-up {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+.mobile-app .animate-fade-in-scale {
+  animation: fadeInScale 0.3s ease-out;
+}
+
+.mobile-app .animate-shake {
+  animation: shake 0.4s ease-in-out;
+}
+
+.mobile-app .animate-gradient-shift {
+  background-size: 200% 200%;
+  animation: gradientShift 3s ease infinite;
+}
+
+.mobile-app .animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.mobile-app .animate-slide-in-right {
+  animation: slideInRight 0.5s ease-out;
+}
+
+.mobile-app .animate-bounce-in {
+  animation: bounceIn 0.6s ease-out;
+}
+
+.mobile-app .animate-bounce-x {
+  animation: bounce-x 1s ease-in-out infinite;
+}
+
+.mobile-app .animate-fade-in {
+  animation: fade-in 0.6s ease-out forwards;
+}
+
+.animate-bounce-x {
+  animation: bounce-x 1s ease-in-out infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out forwards;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out forwards;
+}
+
+.animate-fade-in-scale {
+  animation: fade-in-scale 0.6s ease-out forwards;
+}
+
+/* Enhanced focus styles for accessibility - mobile only */
+.mobile-app .focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 focus:ring-offset-2;
+}
+
+/* Smooth transitions - mobile only */
+.mobile-app .transition-all-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Glass morphism effect */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Accessibility improvements */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.focus:not(.sr-only) {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: inherit;
+  margin: inherit;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Line clamp utilities */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+/* High contrast mode - mobile only */
+.mobile-app.high-contrast {
+  --color-background: #000000;
+  --color-surface: #ffffff;
+  --color-text-primary: #000000;
+  --color-text-secondary: #000000;
+  --color-primary: #0000ff;
+  --color-error: #ff0000;
+  --color-success: #008000;
+}
+
+.mobile-app.high-contrast .bg-theme-surface {
+  background-color: #ffffff !important;
+}
+
+.mobile-app.high-contrast .text-theme-text-primary {
+  color: #000000 !important;
+}
+
+.mobile-app.high-contrast .border {
+  border-color: #000000 !important;
+}
+
+/* Large text mode - mobile only */
+.mobile-app.large-text {
+  font-size: 1.125rem !important;
+}
+
+.mobile-app.large-text .text-sm {
+  font-size: 1rem !important;
+}
+
+.mobile-app.large-text .text-xs {
+  font-size: 0.875rem !important;
+}
+
+/* Focus visible improvements - mobile only */
+.mobile-app :focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Touch targets */
+@media (pointer: coarse) {
+  button,
+  [role="button"],
+  input[type="submit"],
+  input[type="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

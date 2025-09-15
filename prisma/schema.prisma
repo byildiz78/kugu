@@ -1,0 +1,526 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "windows", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String      @id @default(cuid())
+  name          String?
+  email         String      @unique
+  emailVerified DateTime?
+  image         String?
+  role          Role        @default(CLIENT)
+  password      String?
+  restaurantId  String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+  restaurant    Restaurant? @relation(fields: [restaurantId], references: [id])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Restaurant {
+  id        String     @id @default(cuid())
+  name      String
+  address   String?
+  phone     String?
+  logo      String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  campaigns Campaign[]
+  customers Customer[]
+  products  Product[]
+  rewards   Reward[]
+  segments  Segment[]
+  settings  Settings?
+  tiers     Tier[]
+  staff     User[]
+}
+
+model Customer {
+  id             String            @id @default(cuid())
+  name           String
+  email          String            @unique
+  phone          String?
+  birthDate      DateTime?
+  points         Int               @default(0)
+  level          CustomerLevel     @default(REGULAR)
+  tierId         String?
+  restaurantId   String
+  themeId        String?           // Custom theme override
+  pushToken      String?
+  lastVisit      DateTime?
+  totalSpent     Float             @default(0)
+  visitCount     Int               @default(0)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  campaignUsages CampaignUsage[]
+  restaurant     Restaurant        @relation(fields: [restaurantId], references: [id])
+  tier           Tier?             @relation("CustomerTier", fields: [tierId], references: [id])
+  theme          CustomTheme?      @relation("CustomerTheme", fields: [themeId], references: [id])
+  rewards        CustomerReward[]
+  segments       CustomerSegment[]
+  pointHistory      PointHistory[]
+  tierHistory       TierHistory[]
+  transactions      Transaction[]
+  pushSubscriptions PushSubscription[]
+}
+
+model Segment {
+  id           String            @id @default(cuid())
+  name         String
+  description  String?
+  rules        String?
+  isAutomatic  Boolean           @default(false)
+  criteria     String?
+  restaurantId String
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  customers    CustomerSegment[]
+  restaurant   Restaurant        @relation(fields: [restaurantId], references: [id])
+  campaigns    Campaign[]        @relation("CampaignToSegment")
+
+  @@unique([name, restaurantId])
+}
+
+model CustomerSegment {
+  customerId String
+  segmentId  String
+  addedAt    DateTime @default(now())
+  segment    Segment  @relation(fields: [segmentId], references: [id])
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  @@id([customerId, segmentId])
+}
+
+model Campaign {
+  id                  String                @id @default(cuid())
+  name                String
+  description         String
+  type                CampaignType          @default(DISCOUNT)
+  startDate           DateTime
+  endDate             DateTime
+  isActive            Boolean               @default(true)
+  discountType        DiscountType
+  discountValue       Float
+  minPurchase         Float?
+  maxUsage            Int?
+  maxUsagePerCustomer Int?                  @default(1)
+  validHours          String?
+  validDays           String?
+  targetProducts      String?
+  targetCategories    String?
+  freeProducts        String?
+  freeCategories      String?
+  buyQuantity         Int?
+  getQuantity         Int?
+  buyFromCategory     String?
+  getFromCategory     String?
+  getSpecificProduct  String?
+  rewardIds           String?
+  autoGiveReward      Boolean               @default(false)
+  pointsMultiplier    Float?                @default(1)
+  pointsRequired      Int?
+  sendNotification    Boolean               @default(true)
+  notificationTitle   String?
+  notificationMessage String?
+  restaurantId        String
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  restaurant          Restaurant            @relation(fields: [restaurantId], references: [id])
+  campaignRewards     CampaignReward[]
+  usages              CampaignUsage[]
+  rewards             Reward[]
+  transactions        TransactionCampaign[]
+  segments            Segment[]             @relation("CampaignToSegment")
+}
+
+model CampaignUsage {
+  id             String   @id @default(cuid())
+  campaignId     String
+  customerId     String
+  usedAt         DateTime @default(now())
+  orderAmount    Float
+  discountAmount Float
+  customer       Customer @relation(fields: [customerId], references: [id])
+  campaign       Campaign @relation(fields: [campaignId], references: [id])
+}
+
+model Reward {
+  id             String           @id @default(cuid())
+  name           String
+  description    String
+  type           RewardType       @default(INSTANT)
+  category       String?
+  pointsCost     Int?
+  value          String?
+  restaurantId   String
+  validityDays   Int?
+  maxRedemptions Int?
+  maxPerCustomer Int?
+  minTier        CustomerLevel?
+  minTierNewId   String?
+  conditions     String?
+  isActive       Boolean          @default(true)
+  stockCount     Int?
+  campaignId     String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  campaigns      CampaignReward[]
+  customers      CustomerReward[]
+  campaign       Campaign?        @relation(fields: [campaignId], references: [id])
+  minTierNew     Tier?            @relation("RewardMinTier", fields: [minTierNewId], references: [id])
+  restaurant     Restaurant       @relation(fields: [restaurantId], references: [id])
+  rules          RewardRule[]
+}
+
+model CustomerReward {
+  id         String    @id @default(cuid())
+  customerId String
+  rewardId   String
+  isRedeemed Boolean   @default(false)
+  redeemedAt DateTime?
+  expiresAt  DateTime?
+  metadata   String?
+  createdAt  DateTime  @default(now())
+  reward     Reward    @relation(fields: [rewardId], references: [id])
+  customer   Customer  @relation(fields: [customerId], references: [id])
+}
+
+model CampaignReward {
+  id         String   @id @default(cuid())
+  campaignId String
+  rewardId   String
+  priority   Int      @default(0)
+  reward     Reward   @relation(fields: [rewardId], references: [id])
+  campaign   Campaign @relation(fields: [campaignId], references: [id])
+
+  @@unique([campaignId, rewardId])
+}
+
+model RewardRule {
+  id              String      @id @default(cuid())
+  rewardId        String
+  triggerType     TriggerType
+  triggerValue    Int
+  periodType      String?
+  categoryFilter  String?
+  timeRestriction String?
+  isActive        Boolean     @default(true)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  reward          Reward      @relation(fields: [rewardId], references: [id])
+}
+
+model PointHistory {
+  id          String               @id @default(cuid())
+  customerId  String
+  amount      Int
+  type        PointTransactionType
+  source      String
+  sourceId    String?
+  balance     Int
+  expiresAt   DateTime?
+  description String?
+  createdAt   DateTime             @default(now())
+  customer    Customer             @relation(fields: [customerId], references: [id])
+}
+
+model Tier {
+  id              String        @id @default(cuid())
+  name            String
+  displayName     String
+  description     String?
+  color           String        @default("#6B7280")
+  gradient        String?
+  icon            String?
+  minTotalSpent   Float?
+  minVisitCount   Int?
+  minPoints       Int?
+  level           Int           @unique
+  pointMultiplier Float         @default(1.0)
+  discountPercent Float?
+  specialFeatures String?
+  restaurantId    String
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  customers       Customer[]    @relation("CustomerTier")
+  rewardsMinTier  Reward[]      @relation("RewardMinTier")
+  restaurant      Restaurant    @relation(fields: [restaurantId], references: [id])
+  tierHistoryTo   TierHistory[] @relation("TierHistoryTo")
+  tierHistoryFrom TierHistory[] @relation("TierHistoryFrom")
+  transactions    Transaction[]
+
+  @@unique([name, restaurantId])
+  @@unique([level, restaurantId])
+}
+
+model TierHistory {
+  id          String   @id @default(cuid())
+  customerId  String
+  fromTierId  String?
+  toTierId    String
+  reason      String?
+  triggeredBy String?
+  createdAt   DateTime @default(now())
+  toTier      Tier     @relation("TierHistoryTo", fields: [toTierId], references: [id])
+  fromTier    Tier?    @relation("TierHistoryFrom", fields: [fromTierId], references: [id])
+  customer    Customer @relation(fields: [customerId], references: [id])
+}
+
+model Transaction {
+  id               String                @id @default(cuid())
+  orderNumber      String                @unique
+  totalAmount      Float
+  discountAmount   Float                 @default(0)
+  finalAmount      Float
+  pointsEarned     Int                   @default(0)
+  pointsUsed       Int                   @default(0)
+  paymentMethod    String?
+  status           TransactionStatus     @default(COMPLETED)
+  notes            String?
+  customerId       String
+  tierId           String?
+  tierMultiplier   Float?
+  transactionDate  DateTime              @default(now())
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  tier             Tier?                 @relation(fields: [tierId], references: [id])
+  customer         Customer              @relation(fields: [customerId], references: [id])
+  appliedCampaigns TransactionCampaign[]
+  items            TransactionItem[]
+}
+
+model TransactionItem {
+  id             String      @id @default(cuid())
+  transactionId  String
+  productId      String
+  productName    String
+  category       String?
+  quantity       Int
+  unitPrice      Float
+  totalPrice     Float
+  discountAmount Float       @default(0)
+  isFree         Boolean     @default(false)
+  notes          String?
+  createdAt      DateTime    @default(now())
+  transaction    Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+}
+
+model TransactionCampaign {
+  id             String      @id @default(cuid())
+  transactionId  String
+  campaignId     String
+  discountAmount Float
+  freeItems      String?
+  pointsEarned   Int         @default(0)
+  appliedAt      DateTime    @default(now())
+  campaign       Campaign    @relation(fields: [campaignId], references: [id])
+  transaction    Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+}
+
+model Product {
+  id           String     @id @default(cuid())
+  name         String
+  description  String?
+  category     String
+  price        Float
+  isActive     Boolean    @default(true)
+  restaurantId String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+
+  @@unique([name, restaurantId])
+}
+
+model Settings {
+  id            String     @id @default(cuid())
+  basePointRate Float      @default(0.1)
+  restaurantId  String     @unique
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+}
+
+enum CampaignType {
+  DISCOUNT
+  PRODUCT_BASED
+  LOYALTY_POINTS
+  TIME_BASED
+  BIRTHDAY_SPECIAL
+  COMBO_DEAL
+  BUY_X_GET_Y
+  CATEGORY_DISCOUNT
+  REWARD_CAMPAIGN
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
+
+enum Role {
+  ADMIN
+  RESTAURANT_ADMIN
+  STAFF
+  CLIENT
+}
+
+enum CustomerLevel {
+  REGULAR
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  FREE_ITEM
+  BUY_ONE_GET_ONE
+}
+
+enum RewardType {
+  INSTANT
+  MILESTONE
+  TIER_BASED
+  TIME_BASED
+  REFERRAL
+  CHALLENGE
+}
+
+enum TriggerType {
+  VISIT_COUNT
+  TOTAL_SPENT
+  POINTS_MILESTONE
+  TIER_REACHED
+  CONSECUTIVE_VISITS
+  CATEGORY_PURCHASE
+  FIRST_PURCHASE
+  BIRTHDAY
+  ANNIVERSARY
+}
+
+enum PointTransactionType {
+  EARNED
+  SPENT
+  EXPIRED
+  ADJUSTED
+  TRANSFERRED
+}
+
+enum NotificationType {
+  CAMPAIGN
+  REWARD
+  POINTS
+  GENERAL
+}
+
+enum Platform {
+  WEB
+  ANDROID
+  IOS
+}
+
+// Push Notification Models
+model PushSubscription {
+  id         String    @id @default(cuid())
+  customerId String
+  endpoint   String
+  p256dhKey  String
+  authKey    String
+  platform   Platform  @default(WEB)
+  userAgent  String?
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime  @default(now())
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, endpoint])
+}
+
+model NotificationLog {
+  id                String           @id @default(cuid())
+  title             String
+  body              String
+  type              NotificationType @default(GENERAL)
+  targetCustomerIds String           // JSON array of customer IDs
+  sentCount         Int              @default(0)
+  failedCount       Int              @default(0)
+  webPushResponse   String?          // JSON response from web-push
+  fcmResponse       String?          // Legacy field, can be removed later
+  createdAt         DateTime         @default(now())
+}
+
+// Custom Theme Management
+model CustomTheme {
+  id           String    @id @default(cuid())
+  restaurantId String
+  name         String
+  description  String?
+  config       Json      // ThemeConfig as JSON
+  isActive     Boolean   @default(true)
+  isDefault    Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  customers    Customer[] @relation("CustomerTheme")
+
+  @@unique([restaurantId, name])
+  @@index([restaurantId, isActive])
+}
+
+// OTP Verification (Database-based storage)
+model OTPVerification {
+  id        String   @id @default(cuid())
+  phone     String
+  otp       String
+  expiresAt DateTime
+  attempts  Int      @default(1)
+  createdAt DateTime @default(now())
+
+  @@index([phone, expiresAt])
+}

@@ -1,0 +1,99 @@
+/* Mobile-only CSS - Completely isolated from admin */
+
+/* Tailwind is already imported in globals.css, no need to re-import */
+/* @tailwind base; */
+/* @tailwind components; */
+/* @tailwind utilities; */
+
+/* Mobile-specific root variables */
+:root {
+  /* Default mobile theme variables - can be overridden dynamically */
+  --mobile-color-primary: #3b82f6;
+  --mobile-color-secondary: #8b5cf6;
+  --mobile-color-accent: #f59e0b;
+  --mobile-color-background: #f9fafb;
+  --mobile-color-surface: #ffffff;
+  --mobile-color-text-primary: #111827;
+  --mobile-color-text-secondary: #6b7280;
+}
+
+/* Mobile app container */
+.mobile-app {
+  /* Use mobile theme variables */
+  --color-primary: var(--mobile-color-primary);
+  --color-secondary: var(--mobile-color-secondary);
+  --color-accent: var(--mobile-color-accent);
+  --color-background: var(--mobile-color-background);
+  --color-surface: var(--mobile-color-surface);
+  --color-text-primary: var(--mobile-color-text-primary);
+  --color-text-secondary: var(--mobile-color-text-secondary);
+  
+  font-family: Inter, system-ui, sans-serif;
+  isolation: isolate;
+  position: relative;
+  z-index: 1;
+  contain: style; /* Contain styles within mobile app */
+}
+
+/* Theme utility classes for mobile */
+.bg-theme-primary { background-color: var(--color-primary); }
+.bg-theme-secondary { background-color: var(--color-secondary); }
+.bg-theme-accent { background-color: var(--color-accent); }
+.bg-theme-background { background-color: var(--color-background); }
+.bg-theme-surface { background-color: var(--color-surface); }
+
+.text-theme-primary { color: var(--color-primary); }
+.text-theme-secondary { color: var(--color-secondary); }
+.text-theme-accent { color: var(--color-accent); }
+.text-theme-text-primary { color: var(--color-text-primary); }
+.text-theme-text-secondary { color: var(--color-text-secondary); }
+
+.border-theme-primary { border-color: var(--color-primary); }
+.border-theme-secondary { border-color: var(--color-secondary); }
+.border-theme-accent { border-color: var(--color-accent); }
+
+/* Prevent admin variables from affecting mobile */
+.mobile-app {
+  --admin-color-primary: initial !important;
+  --admin-color-secondary: initial !important;
+  --admin-color-accent: initial !important;
+  --admin-color-background: initial !important;
+  --admin-color-surface: initial !important;
+  --admin-color-text-primary: initial !important;
+  --admin-color-text-secondary: initial !important;
+}
+
+/* Contact page specific styles */
+.contact-content h1,
+.contact-content h2,
+.contact-content h3,
+.contact-content h4,
+.contact-content h5,
+.contact-content h6 {
+  color: var(--color-text-primary);
+}
+
+.contact-content p {
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.contact-content a {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.contact-content a:hover {
+  color: var(--color-primary);
+  opacity: 0.8;
+}
+
+.contact-content ul,
+.contact-content ol {
+  padding-left: 1.5rem;
+  color: var(--color-text-secondary);
+}
+
+.contact-content li {
+  margin-bottom: 0.5rem;
+}

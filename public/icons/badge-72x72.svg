@@ -1,0 +1,13 @@
+<svg width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="36" cy="36" r="36" fill="#3B82F6" />
+  
+  <!-- Bell icon -->
+  <path
+    d="M36 8c-2.2 0-4 1.8-4 4v2.3C26.4 16.1 22 21.7 22 28v12l-4 4v2h32v-2l-4-4V28c0-6.3-4.4-11.9-10-13.7V12c0-2.2-1.8-4-4-4z"
+    fill="white"
+  />
+  
+  <!-- Bell clapper -->
+  <circle cx="36" cy="52" r="4" fill="white" />
+</svg>

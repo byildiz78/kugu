@@ -1,0 +1,129 @@
+Next.js, TailwindCSS, Prisma ORM ve PostgreSQL kullanarak bir restoran/kafe zinciri için gelişmiş bir sadakat ve kampanya yönetim sistemi geliştirmek istiyorum.
+
+Bu sistem script bazlı değil, tamamen form alanlarıyla yönetilen görsel (no-code) bir kampanya oluşturma mantığına sahip olacak.
+
+Aşağıdaki özellikleri destekleyecek bir admin panel, API uçları ve veritabanı modeli geliştir:
+
+---
+
+🧱 TEKNOLOJİ YIĞINI
+
+- Frontend: Next.js (App Router)
+- CSS/UI: TailwindCSS + shadcn/ui (veya benzeri component kütüphanesi)
+- ORM: Prisma
+- Veritabanı: PostgreSQL
+- API: Next.js API Routes
+- Auth (isteğe bağlı): JWT veya NextAuth
+
+---
+
+🎯 KAMPANYA YÖNETİMİ (SCRIPT’SİZ)
+
+Her kampanya koşulu ve ödülü, formlar üzerinden seçilir. Script, JSON yazımı veya mantıksal DSL kullanılmaz.
+
+Kampanya tablosu aşağıdaki gibi yapılandırılır:
+
+- `id`: UUID
+- `name`: Kampanya adı
+- `triggerType`: ENUM: ['visit', 'amount', 'product', 'time']
+- `triggerValue`: Sayısal (örnek: 3 ziyaret, 100₺)
+- `productId`: (Sadece triggerType = 'product' için)
+- `timeRange`: (Sadece triggerType = 'time' için), örn: '14:00-17:00'
+- `rewardType`: ENUM: ['points', 'product', 'coupon']
+- `rewardValue`: Puan miktarı, ürün ID veya kupon havuzu ID
+- `targetSegmentId`: Kampanyanın çalışacağı segment
+- `isStackable`: Diğer kampanyalarla birlikte çalışabilir mi
+- `isActive`: true/false
+- `startDate`, `endDate`: Kampanya süresi
+
+---
+
+👥 SEGMENT SİSTEMİ
+
+Segment yapısı da script’siz olacak.
+
+Segment tablosu:
+- `id`, `name`, `type`: ['manual', 'dynamic'], `rulesJson` (sadece dynamic için)
+
+Dinamik segment örneği:
+{
+  "lastVisitDaysAgo": { "gte": 30 },
+  "totalSpend": { "gte": 500 },
+  "tier": "silver"
+}
+
+Kampanyalar sadece belirli bir `targetSegmentId`'ye uygulanabilir olacak.
+
+---
+
+🎫 KUPON SİSTEMİ
+
+Her kampanya bir kupon havuzu ile eşleştirilebilir. Kampanya tetiklendiğinde kullanıcıya o havuzdan bir adet kullanılmamış kupon atanır.
+
+Veritabanı yapısı:
+
+**CouponPool**
+- `id`, `name`, `campaignId`, `totalCount`, `usedCount`
+
+**Coupon**
+- `id`, `code`, `poolId`, `assignedToUserId`, `isUsed`, `usedAt`
+
+Kupon kodları tekil, otomatik üretilebilir ve sonradan import edilebilir.
+
+---
+
+🎁 ÖDÜL TİPLERİ
+
+Kampanyalar aşağıdaki ödül türlerinden birini tetikler:
+
+- `points`: Belirli miktar puan
+- `product`: Belirli bir ürün (örneğin “Ücretsiz Cookie”)
+- `coupon`: Kupon havuzundan bir kod atanır
+
+Kampanya formu içinde ödül türü dropdown olarak seçilir ve devamındaki alanlar dinamik gösterilir.
+
+---
+
+👤 KULLANICI MODELİ
+
+- `id`, `name`, `email`, `tier`, `points`, `segments[]`
+- Her kullanıcının puan geçmişi, kazanılan kampanyalar ve kuponları takip edilebilmeli
+
+---
+
+📦 REDDEMPTIONS (KAZANILAN ÖDÜLLER)
+
+Her tetiklenen kampanya bir redemption oluşturur:
+- `userId`, `campaignId`, `rewardType`, `rewardValue`, `createdAt`
+
+---
+
+📊 ADMIN PANEL SAYFALARI
+
+1. `/admin/dashboard` → Özet metrikler
+2. `/admin/users` → Kullanıcı listesi ve detay
+3. `/admin/segments` → Segment oluşturma, listeleme
+4. `/admin/rewards` → Ödül ve kupon havuzu yönetimi
+5. `/admin/coupons` → Kupon listesi, havuz atama
+6. `/admin/campaigns` → Kampanya listesi
+7. `/admin/campaigns/create` → Form bazlı kampanya oluşturma ekranı
+
+---
+
+📄 KAMPANYA FORMU UI DETAYI
+
+- Ad: input
+- Başlangıç & Bitiş: tarih picker
+- Koşul Tipi: dropdown (visit, amount, product, time)
+- Koşul Değeri: numeric input / ürün seçimi / saat aralığı
+- Ödül Tipi: dropdown (points, product, coupon)
+- Ödül Detayı: puan sayısı / ürün ID / kupon havuzu seçimi
+- Segment seçimi: dropdown (segment listesi)
+- Diğer kampanyalarla birlikte çalışabilir mi? checkbox
+- Kaydet butonu
+
+---
+
+
+
+Kodları açık, yorumlu, modüler ve üretime hazır şekilde yaz. Form validasyonlarını dahil et. Script/JSON içermeyen, görsel alanlara dayalı kontrol mantığına sadık kal.
