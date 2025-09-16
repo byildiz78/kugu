@@ -2,33 +2,58 @@
 
 echo "🔧 Sunucu deployment kurulumu başlatılıyor..."
 
+# 0. Build cache'i temizle
+echo "🧹 Cache temizleniyor..."
+rm -rf .next
+
 # 1. Node modules'ı temizle ve yeniden yükle
 echo "📦 Dependencies yükleniyor..."
-rm -rf node_modules
+rm -rf node_modules package-lock.json
 npm install
 
 # 2. Prisma client'ı yeniden oluştur
 echo "🗄️ Prisma client oluşturuluyor..."
 npx prisma generate
 
-# 3. Veritabanını sıfırla ve migration'ları uygula
-echo "🗄️ Veritabanı migration'ları uygulanıyor..."
-npx prisma migrate deploy
+# 3. Veritabanını kontrol et
+echo "🗄️ Veritabanı kontrol ediliyor..."
+if [ -f "prisma/dev.db" ]; then
+    echo "Veritabanı mevcut"
+else
+    echo "Veritabanı oluşturuluyor..."
+    npx prisma db push
+fi
 
-# 4. Veritabanını seed et (admin kullanıcısı oluştur)
-echo "👤 Admin kullanıcısı oluşturuluyor..."
+# 4. Migration'ları uygula
+echo "🗄️ Veritabanı migration'ları uygulanıyor..."
+npx prisma migrate deploy || npx prisma db push
+
+# 5. Veritabanını seed et (admin kullanıcısı oluştur)
+echo "👤 Admin kullanıcısı kontrol ediliyor..."
 npm run seed
 
-# 5. Next.js build'i oluştur
+# 6. Next.js build'i oluştur
 echo "🏗️ Next.js production build oluşturuluyor..."
-npm run build
+NODE_ENV=production npm run build
 
-# 6. PM2 ile uygulamayı yeniden başlat (eğer PM2 kullanıyorsanız)
-echo "🚀 Uygulama başlatılıyor..."
-# pm2 restart kugu || pm2 start npm --name "kugu" -- start
+# 7. Environment değişkenlerini kontrol et
+echo "🔍 Environment değişkenleri kontrol ediliyor..."
+if [ -f ".env.local" ]; then
+    echo "✓ .env.local dosyası mevcut"
+    grep "NEXTAUTH_URL" .env.local || echo "⚠️  NEXTAUTH_URL eksik!"
+    grep "NEXTAUTH_SECRET" .env.local || echo "⚠️  NEXTAUTH_SECRET eksik!"
+    grep "DATABASE_URL" .env.local || echo "⚠️  DATABASE_URL eksik!"
+else
+    echo "❌ .env.local dosyası bulunamadı!"
+fi
 
+echo ""
 echo "✅ Kurulum tamamlandı!"
-echo "📝 Kontrol listesi:"
-echo "  - .env.local dosyasında NEXTAUTH_URL doğru mu?"
-echo "  - DATABASE_URL doğru ayarlanmış mı?"
-echo "  - Port 3012'de çalışıyor mu?"
+echo ""
+echo "📝 Uygulamayı başlatmak için:"
+echo "  PORT=3012 npm run start"
+echo ""
+echo "📝 PM2 ile başlatmak için:"
+echo "  pm2 delete kugu 2>/dev/null"
+echo "  PORT=3012 pm2 start npm --name 'kugu' -- start"
+echo "  pm2 save"
