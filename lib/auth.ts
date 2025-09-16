@@ -8,6 +8,7 @@ export const authOptions: NextAuthOptions = {
   debug: false, // Disable debug mode
   adapter: PrismaAdapter(prisma),
   trustHost: true, // Trust the host header for proper URL generation
+  useSecureCookies: false, // Disable secure cookies for HTTP
   providers: [
     CredentialsProvider({
       name: 'credentials',

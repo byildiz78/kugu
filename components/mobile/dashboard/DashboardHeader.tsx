@@ -77,7 +77,7 @@ export function DashboardHeader() {
                 style={{ backgroundColor: 'var(--color-accent)' }}
               />
               <p className="text-theme-text-secondary font-medium">
-                {customer?.restaurant?.name || 'Air CRM'} sadakat programına hoş geldiniz
+                Kuğu Pastanesi sadakat programına hoş geldiniz
               </p>
             </div>
           </div>
