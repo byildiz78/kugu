@@ -111,7 +111,7 @@ export function StampCollection({ customerId }: StampCollectionProps) {
             <h2 className="text-xl font-bold text-gray-900">
               <div className="flex items-center gap-2">
                 <SwanIcon className="w-6 h-6 text-gray-800" />
-                <span>Damgalarım</span>
+                <span>Kuğularım</span>
               </div>
             </h2>
             <p className="text-sm text-gray-600">
