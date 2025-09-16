@@ -108,7 +108,7 @@ export function StampCollection({ customerId }: StampCollectionProps) {
           <div className={`w-2 h-8 rounded-full bg-gradient-to-b ${theme.primary.gradient}`} />
           <div>
             <h2 className="text-xl font-bold text-gray-900">
-              ⭐ Damgalarım
+              ⭐ Kuğularım
             </h2>
             <p className="text-sm text-gray-600">
               {stampData.stamps.length} aktif kampanya

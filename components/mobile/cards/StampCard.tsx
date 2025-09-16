@@ -137,7 +137,7 @@ export function StampCard({ stamp }: StampCardProps) {
       {stamp.stampsEarned > 0 && (
         <div className="mb-5">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="font-semibold text-gray-900">Damgalarım</h4>
+            <h4 className="font-semibold text-gray-900">Kuğularım</h4>
             <div className="text-sm text-gray-600">
               {stamp.stampsEarned - stamp.stampsUsed} / {stamp.stampsEarned}
             </div>
