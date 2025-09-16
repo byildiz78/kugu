@@ -45,12 +45,26 @@ export default function LoginPage() {
     setError('')
 
     try {
+      // Debug: Check providers endpoint first
+      console.log('Checking NextAuth providers...')
+      const providersResponse = await fetch('/api/auth/providers')
+      console.log('Providers response status:', providersResponse.status)
+      console.log('Providers response headers:', providersResponse.headers.get('content-type'))
+
+      if (!providersResponse.ok || !providersResponse.headers.get('content-type')?.includes('application/json')) {
+        console.error('NextAuth endpoints not returning JSON. Check middleware configuration.')
+        const text = await providersResponse.text()
+        console.error('Response text (first 500 chars):', text.substring(0, 500))
+      }
+
       const result = await signIn('credentials', {
         email,
         password,
         redirect: false,
         callbackUrl: '/admin'
       })
+
+      console.log('SignIn result:', result)
 
       if (result?.error) {
         setError('Geçersiz email veya şifre')
