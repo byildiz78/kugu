@@ -1,8 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Award, Gift } from 'lucide-react'
-import { SwanIcon } from '@/components/icons/SwanIcon'
+import { Award, Gift, Star } from 'lucide-react'
 import { useTheme } from '@/lib/mobile/theme-context'
 import { StampCard } from '@/components/mobile/cards/StampCard'
 import { LoadingSpinner } from '@/components/mobile/ui/LoadingSpinner'
@@ -109,10 +108,7 @@ export function StampCollection({ customerId }: StampCollectionProps) {
           <div className={`w-2 h-8 rounded-full bg-gradient-to-b ${theme.primary.gradient}`} />
           <div>
             <h2 className="text-xl font-bold text-gray-900">
-              <div className="flex items-center gap-2">
-                <SwanIcon className="w-6 h-6 text-gray-800" />
-                <span>Kuğularım</span>
-              </div>
+              ⭐ Damgalarım
             </h2>
             <p className="text-sm text-gray-600">
               {stampData.stamps.length} aktif kampanya
@@ -122,7 +118,7 @@ export function StampCollection({ customerId }: StampCollectionProps) {
         
         {stampData.totalActiveStamps > 0 && (
           <div className="flex items-center gap-1 px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-sm font-bold rounded-full shadow-lg animate-pulse">
-            <SwanIcon className="w-5 h-5" fill="currentColor" />
+            <Star className="w-4 h-4" fill="currentColor" />
             {stampData.totalActiveStamps} Hazır!
           </div>
         )}

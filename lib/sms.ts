@@ -122,7 +122,7 @@ export function generateOTP(): string {
  */
 export async function sendOTP(phoneNumber: string): Promise<{ success: boolean; otp?: string; error?: string }> {
   const otp = generateOTP()
-  const message = `Kugu Pastanesi Sadakat Programi doğrulama kodunuz: ${otp}`
+  const message = `Air CRM doğrulama kodunuz: ${otp}`
   
   const result = await sendSMS(phoneNumber, message)
   
