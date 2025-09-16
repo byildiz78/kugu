@@ -7,6 +7,7 @@ import * as bcrypt from 'bcryptjs'
 export const authOptions: NextAuthOptions = {
   debug: false, // Disable debug mode
   adapter: PrismaAdapter(prisma),
+  trustHost: true, // Trust the host header for proper URL generation
   providers: [
     CredentialsProvider({
       name: 'credentials',

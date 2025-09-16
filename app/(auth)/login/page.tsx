@@ -33,11 +33,11 @@ export default function LoginPage() {
         if (data?.user) {
           console.log('User already logged in, redirecting to /admin')
           // Force redirect if already logged in
-          window.location.replace('/admin')
+          router.push('/admin')
         }
       })
       .catch(err => console.error('Session check error:', err))
-  }, [])
+  }, [router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -58,7 +58,7 @@ export default function LoginPage() {
 
     // First, let's check what NextAuth endpoints return
     console.log('=== Testing NextAuth Endpoints ===')
-    
+
     try {
       // Test providers endpoint
       const providersRes = await fetch('/api/auth/providers')
@@ -66,12 +66,20 @@ export default function LoginPage() {
       console.log('Providers headers:', Object.fromEntries(providersRes.headers.entries()))
       const providersText = await providersRes.text()
       console.log('Providers response (first 200 chars):', providersText.substring(0, 200))
-      
+
       // Test session endpoint
       const sessionRes = await fetch('/api/auth/session')
       console.log('Session endpoint status:', sessionRes.status)
       const sessionText = await sessionRes.text()
       console.log('Session response:', sessionText)
+
+      // Check if already logged in
+      const sessionData = JSON.parse(sessionText)
+      if (sessionData?.user) {
+        console.log('User already has session, redirecting immediately')
+        router.push('/admin')
+        return
+      }
       
       // Test CSRF endpoint
       const csrfRes = await fetch('/api/auth/csrf')
