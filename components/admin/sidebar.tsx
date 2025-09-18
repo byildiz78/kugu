@@ -19,7 +19,8 @@ import {
   Crown,
   Palette,
   MessageSquare,
-  BarChart3
+  BarChart3,
+  Award
 } from 'lucide-react'
 
 const navigation = [
@@ -59,20 +60,25 @@ const navigation = [
 ]
 
 const reportsNavigation = [
-  { 
-    name: 'Analiz', 
-    href: '/admin/analytics', 
+  {
+    name: 'Analiz',
+    href: '/admin/analytics',
     icon: BarChart3
   },
-  { 
-    name: 'Satış Kayıtları', 
-    href: '/admin/transactions', 
+  {
+    name: 'Satış Kayıtları',
+    href: '/admin/transactions',
     icon: Receipt
   },
-  { 
-    name: 'Para Puan Hareketleri', 
-    href: '/admin/point-transactions', 
+  {
+    name: 'Para Puan Hareketleri',
+    href: '/admin/point-transactions',
     icon: TrendingUp
+  },
+  {
+    name: 'Kampanya Kullanımları',
+    href: '/admin/campaign-usage',
+    icon: Award
   }
 ]
 
