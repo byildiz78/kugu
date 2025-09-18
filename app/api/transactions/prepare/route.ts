@@ -177,7 +177,8 @@ export async function POST(request: NextRequest) {
 
     for (const campaign of stampCampaigns) {
       const conditions = campaign.conditions as any
-      if (!conditions?.productIds || !conditions?.buyQuantity || !conditions?.getQuantity) {
+      if (!conditions || !conditions.productIds || !Array.isArray(conditions.productIds) ||
+          !conditions.buyQuantity || !conditions.getQuantity) {
         continue
       }
 
@@ -219,7 +220,7 @@ export async function POST(request: NextRequest) {
 
       if (availableStamps > 0) {
         // Get product info for free item
-        const freeProductId = conditions.freeProductId || conditions.productIds[0]
+        const freeProductId = conditions.freeProductId || (conditions.productIds && conditions.productIds[0])
         const freeProduct = await prisma.product.findFirst({
           where: { id: freeProductId }
         })

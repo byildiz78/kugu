@@ -181,50 +181,101 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        const conditions = campaign.conditions as any
+        // Handle different campaign structures
+        let productIds: string[] = []
+        let buyQuantity = 1
+        let getQuantity = 1
 
-        // Check available stamps
-        const earnedTransactions = await prisma.transaction.findMany({
+        // Try conditions first (new structure)
+        const conditions = campaign.conditions as any
+        if (conditions && conditions.productIds && Array.isArray(conditions.productIds)) {
+          productIds = conditions.productIds
+          buyQuantity = conditions.buyQuantity || 1
+          getQuantity = conditions.getQuantity || 1
+        }
+        // Fallback to direct fields (old structure)
+        else if (campaign.targetProducts) {
+          try {
+            productIds = JSON.parse(campaign.targetProducts)
+            buyQuantity = campaign.buyQuantity || 1
+            getQuantity = campaign.getQuantity || 1
+          } catch (e) {
+            warnings.push(`${campaign.name}: targetProducts JSON parse hatası`)
+            continue
+          }
+        } else {
+          warnings.push(`${campaign.name}: Ne conditions ne de targetProducts bulunamadı`)
+          continue
+        }
+
+        if (!productIds || productIds.length === 0) {
+          warnings.push(`${campaign.name}: ProductIds boş`)
+          continue
+        }
+
+        // Check available stamps - using same logic as mobile/stamps endpoint
+        const qualifyingTransactions = await prisma.transactionItem.findMany({
           where: {
-            customerId,
-            status: 'COMPLETED',
-            appliedCampaigns: {
-              some: { campaignId }
-            }
+            transaction: {
+              customerId: customerId,
+              status: 'COMPLETED',
+              createdAt: {
+                gte: campaign.startDate || new Date(0)
+              }
+            },
+            isFree: false, // Only count paid items for stamps
+            ...(productIds.length > 0 && {
+              productId: { in: productIds }
+            })
           },
-          include: {
-            items: {
-              where: {
-                productId: { in: conditions.productIds || [] }
+          select: {
+            quantity: true,
+            transaction: {
+              select: {
+                id: true,
+                createdAt: true
               }
             }
           }
         })
 
-        const totalPurchased = earnedTransactions.reduce((sum, tx) => {
-          return sum + tx.items.reduce((itemSum, item) => itemSum + item.quantity, 0)
-        }, 0)
+        // Calculate total quantity purchased
+        const totalPurchased = qualifyingTransactions.reduce((sum, item) => sum + item.quantity, 0)
 
-        const totalStampsEarned = Math.floor(totalPurchased / (conditions.buyQuantity || 1))
+        // Calculate stamps earned (how many complete sets of buyQuantity)
+        const totalStampsEarned = Math.floor(totalPurchased / buyQuantity)
 
-        // Count stamps used - simplified approach
-        const usedStampCount = await prisma.campaignUsage.count({
+        // Count stamps used - Get how many times this campaign was already used
+        const usedStampCount = await prisma.transactionCampaign.count({
           where: {
-            customerId,
-            campaignId,
-            discountAmount: { gt: 0 } // Stamp redemptions have discount amount > 0
+            campaignId: campaign.id,
+            transaction: {
+              customerId: customerId
+            }
           }
         })
 
-        const availableStamps = totalStampsEarned - usedStampCount
+        const availableStamps = Math.max(0, totalStampsEarned - usedStampCount)
 
         if (availableStamps < 1) {
-          warnings.push(`${campaign.name}: Yeterli damga yok`)
+          warnings.push(`${campaign.name}: Yeterli damga yok (Kazanılan: ${totalStampsEarned}, Kullanılan: ${usedStampCount}, Mevcut: ${availableStamps})`)
           continue
         }
 
         // Get free product info
-        const freeProductId = conditions.freeProductId || conditions.productIds?.[0]
+        let freeProductId = campaign.getSpecificProduct || productIds[0]
+
+        // Try to get from freeProducts if available
+        if (campaign.freeProducts) {
+          try {
+            const freeProductIds = JSON.parse(campaign.freeProducts)
+            if (freeProductIds && freeProductIds.length > 0) {
+              freeProductId = freeProductIds[0]
+            }
+          } catch (e) {
+            // Use fallback
+          }
+        }
         const freeProduct = await prisma.product.findFirst({
           where: { id: freeProductId }
         })
@@ -385,6 +436,12 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    console.log(`[Preview] Created reservation token: ${reservationToken} for customer: ${customerId}`)
+
+    // Get token info for response
+    const tokenInfo = reservationTokenService.getTokenInfo(reservationToken)
+    console.log(`[Preview] Token info:`, tokenInfo)
+
     // Prepare response
     const response = {
       breakdown: {
@@ -408,7 +465,11 @@ export async function POST(request: NextRequest) {
       warnings,
       errors: errors.length > 0 ? errors : undefined,
       reservationToken,
-      expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString()
+      tokenInfo: {
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+        expiresInSeconds: tokenInfo?.expiresIn || 900,
+        valid: tokenInfo?.valid || false
+      }
     }
 
     return NextResponse.json(response)

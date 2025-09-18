@@ -40,14 +40,24 @@ export async function POST(request: NextRequest) {
     const { reservationToken, orderNumber, paymentMethod, paymentReference, notes } = validationResult.data
 
     // Validate and consume reservation token
+    console.log(`[Complete] Attempting to consume token: ${reservationToken}`)
+
+    // First validate without consuming to get detailed info
+    const tokenInfo = reservationTokenService.getTokenInfo(reservationToken)
+    console.log(`[Complete] Token info:`, tokenInfo)
+
     const reservationData = await reservationTokenService.consume(reservationToken)
 
     if (!reservationData) {
+      console.log(`[Complete] Token consumption failed for: ${reservationToken}`)
       return NextResponse.json({
         error: 'Invalid or expired token',
-        message: 'Reservation token is invalid or has expired. Please create a new preview.'
+        message: 'Reservation token is invalid or has expired. Please create a new preview.',
+        debug: tokenInfo
       }, { status: 400 })
     }
+
+    console.log(`[Complete] Token consumed successfully for customer: ${reservationData.customerId}`)
 
     // Check if order number already exists
     const existingTransaction = await prisma.transaction.findUnique({
