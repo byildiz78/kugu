@@ -43,24 +43,8 @@ export async function POST(request: NextRequest) {
 
     const { customerId, items, location } = validationResult.data
 
-    // Get customer first to get restaurantId for item resolution
-    const customer = await prisma.customer.findUnique({
-      where: { id: customerId },
-      select: { restaurantId: true }
-    })
-
-    if (!customer) {
-      return NextResponse.json({
-        error: 'Customer not found',
-        message: `No customer found with ID: ${customerId}`
-      }, { status: 404 })
-    }
-
-    // Debug: Log customer restaurant ID
-    console.log(`[Prepare] Customer restaurant ID: ${customer.restaurantId}`)
-
     // Process items: resolve menuItemKeys to productIds and enrich with product details
-    const resolvedItems = await processTransactionItems(items, customer.restaurantId)
+    const resolvedItems = await processTransactionItems(items)
 
     // Calculate subtotal using resolved items with product prices
     const subtotal = resolvedItems.reduce((sum, item) => sum + item.totalPrice, 0)
@@ -109,7 +93,6 @@ export async function POST(request: NextRequest) {
     const now = new Date()
     const allCampaigns = await prisma.campaign.findMany({
       where: {
-        restaurantId: customerWithRelations.restaurantId,
         isActive: true,
         startDate: { lte: now },
         endDate: { gte: now }
@@ -124,7 +107,9 @@ export async function POST(request: NextRequest) {
 
     // Filter campaigns based on conditions
     const eligibleCampaigns = []
+    console.log(`[Campaign Filtering] Starting to filter ${allCampaigns.length} campaigns. Subtotal: ${subtotal}`)
     for (const campaign of allCampaigns) {
+      console.log(`[Campaign Filtering] Processing campaign: ${campaign.name}, minPurchase: ${campaign.minPurchase}`)
       // Check segment targeting
       if (campaign.segments.length > 0) {
         const customerSegmentIds = customerWithRelations.segments.map(cs => cs.segmentId)
@@ -145,7 +130,9 @@ export async function POST(request: NextRequest) {
       }
 
       // Check minimum purchase
-      if (conditions?.minPurchase && subtotal < conditions.minPurchase) {
+      if ((conditions?.minPurchase && subtotal < conditions.minPurchase) ||
+          (campaign.minPurchase && subtotal < campaign.minPurchase)) {
+        console.log(`[Campaign Filter] ${campaign.name}: Minimum purchase not met. Required: ${conditions?.minPurchase || campaign.minPurchase}, Subtotal: ${subtotal}`)
         continue
       }
 
@@ -191,7 +178,6 @@ export async function POST(request: NextRequest) {
     const eligibleStamps = []
     const stampCampaigns = await prisma.campaign.findMany({
       where: {
-        restaurantId: customerWithRelations.restaurantId,
         type: 'PRODUCT_BASED',
         isActive: true,
         startDate: { lte: now },
@@ -316,7 +302,6 @@ export async function POST(request: NextRequest) {
     // Add point-purchasable rewards
     const pointRewards = await prisma.reward.findMany({
       where: {
-        restaurantId: customerWithRelations.restaurantId,
         isActive: true,
         pointsCost: { lte: customerWithRelations.points }
         // minTierNewId filter removed for now - will add proper tier filtering later

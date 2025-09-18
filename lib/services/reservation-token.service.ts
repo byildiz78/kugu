@@ -59,14 +59,26 @@ export interface ReservationData {
   expiresAt: number
 }
 
+// Use global to persist across hot reloads in development
+declare global {
+  var _reservationTokenCache: Map<string, ReservationData> | undefined
+  var _reservationCleanupInterval: NodeJS.Timeout | undefined
+}
+
 class ReservationTokenService {
   private static instance: ReservationTokenService
-  private cache: Map<string, ReservationData> = new Map()
+  private cache: Map<string, ReservationData>
   private cleanupInterval: NodeJS.Timeout | null = null
   private readonly TOKEN_EXPIRY_MS = 15 * 60 * 1000 // 15 minutes
   private readonly CLEANUP_INTERVAL_MS = 60 * 1000 // 1 minute
 
   private constructor() {
+    // Use global cache to persist across hot reloads
+    if (!global._reservationTokenCache) {
+      global._reservationTokenCache = new Map()
+    }
+    this.cache = global._reservationTokenCache
+
     // Start cleanup interval
     this.startCleanupInterval()
   }
@@ -187,19 +199,24 @@ class ReservationTokenService {
   }
 
   private startCleanupInterval(): void {
-    if (this.cleanupInterval) {
+    // Use global cleanup interval to prevent duplicates
+    if (global._reservationCleanupInterval) {
+      this.cleanupInterval = global._reservationCleanupInterval
       return
     }
 
     this.cleanupInterval = setInterval(() => {
       this.cleanExpired()
     }, this.CLEANUP_INTERVAL_MS)
+
+    global._reservationCleanupInterval = this.cleanupInterval
   }
 
   stopCleanupInterval(): void {
     if (this.cleanupInterval) {
       clearInterval(this.cleanupInterval)
       this.cleanupInterval = null
+      global._reservationCleanupInterval = undefined
     }
   }
 

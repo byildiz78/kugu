@@ -57,7 +57,10 @@ export async function POST(request: NextRequest) {
 
     const { customerId, items, selections } = validationResult.data
 
-    // Get customer first to get restaurantId for item resolution
+    // Process items: resolve menuItemKeys to productIds and enrich with product details
+    const resolvedItems = await processTransactionItems(items)
+
+    // Get customer with all relations
     const customer = await prisma.customer.findUnique({
       where: { id: customerId },
       include: {
@@ -74,12 +77,6 @@ export async function POST(request: NextRequest) {
         message: `No customer found with ID: ${customerId}`
       }, { status: 404 })
     }
-
-    // Debug: Log customer restaurant ID
-    console.log(`[Preview] Customer restaurant ID: ${customer.restaurantId}`)
-
-    // Process items: resolve menuItemKeys to productIds and enrich with product details if needed
-    const resolvedItems = await processTransactionItems(items, customer.restaurantId)
 
     // Initialize calculation variables - use resolved items for accurate pricing
     const subtotal = resolvedItems.reduce((sum, item) => sum + item.totalPrice, 0)

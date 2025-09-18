@@ -19,8 +19,7 @@ interface ResolvedItem {
  * Maintains backward compatibility while supporting POS integration
  */
 export async function resolveItemIds(
-  items: InputItem[],
-  restaurantId: string
+  items: InputItem[]
 ): Promise<ResolvedItem[]> {
   if (!items || items.length === 0) {
     return []
@@ -37,29 +36,12 @@ export async function resolveItemIds(
 
     // If menuItemKey is provided, resolve to productId
     if (item.menuItemKey) {
-      console.log(`[ItemResolver] Looking for menuItemKey: ${item.menuItemKey} in restaurant: ${restaurantId}`)
+      console.log(`[ItemResolver] Looking for menuItemKey: ${item.menuItemKey}`)
 
-      // Debug: List all products with this menuItemKey regardless of restaurant
-      const allProductsWithKey = await prisma.product.findMany({
-        where: {
-          menuItemKey: item.menuItemKey
-        },
-        select: {
-          id: true,
-          name: true,
-          restaurantId: true,
-          isActive: true,
-          menuItemKey: true
-        }
-      })
-      console.log(`[ItemResolver] All products with menuItemKey ${item.menuItemKey}:`, allProductsWithKey)
-
-      // TEMPORARY FIX: Skip restaurant validation for menuItemKey resolution
-      console.log(`[ItemResolver] TEMP FIX: Searching for menuItemKey without restaurant restriction`)
       const product = await prisma.product.findFirst({
         where: {
           menuItemKey: item.menuItemKey,
-          isActive: true  // Only require active status
+          isActive: true
         },
         select: {
           id: true,
@@ -71,6 +53,7 @@ export async function resolveItemIds(
       })
 
       console.log(`[ItemResolver] Final product found:`, product)
+      console.log(`[ItemResolver] Item unitPrice from request:`, item.unitPrice)
 
       if (!product) {
         console.log(`[ItemResolver] Product NOT FOUND for menuItemKey: ${item.menuItemKey}`)
@@ -86,12 +69,15 @@ export async function resolveItemIds(
         } as ResolvedItem
       }
 
-      return {
+      const resolvedItem = {
         ...item,
         productId: product.id,
         // Preserve menuItemKey for reference
         menuItemKey: item.menuItemKey
       } as ResolvedItem
+
+      console.log(`[ItemResolver] Resolved item:`, resolvedItem)
+      return resolvedItem
     }
 
     // Neither productId nor menuItemKey provided
@@ -130,15 +116,13 @@ export function validateItems(items: InputItem[]): void {
  * Gets product details for resolved items
  */
 export async function enrichItemsWithProductDetails(
-  resolvedItems: ResolvedItem[],
-  restaurantId: string
+  resolvedItems: ResolvedItem[]
 ) {
   const productIds = resolvedItems.map(item => item.productId)
 
   const products = await prisma.product.findMany({
     where: {
       id: { in: productIds },
-      restaurantId,
       isActive: true
     },
     select: {
@@ -160,22 +144,30 @@ export async function enrichItemsWithProductDetails(
 
     // If product not found but it's a real productId, create placeholder
     if (!product) {
+      const finalUnitPrice = item.unitPrice || 0
       return {
         ...item,
         productName: item.productName || 'Unknown Product',
-        unitPrice: item.unitPrice || 0,
+        unitPrice: finalUnitPrice,
         category: 'Unknown',
-        totalPrice: (item.unitPrice || 0) * item.quantity
+        totalPrice: finalUnitPrice * item.quantity
       }
     }
 
-    return {
+    // Use request unitPrice if provided, otherwise use product price
+    const finalUnitPrice = item.unitPrice ?? product.price
+    console.log(`[ItemResolver] Enriching item - productId: ${item.productId}, request unitPrice: ${item.unitPrice}, product price: ${product.price}, final unitPrice: ${finalUnitPrice}`)
+
+    const enrichedItem = {
       ...item,
       productName: product.name,
-      unitPrice: product.price,
+      unitPrice: finalUnitPrice,
       category: product.category,
-      totalPrice: product.price * item.quantity
+      totalPrice: finalUnitPrice * item.quantity
     }
+
+    console.log(`[ItemResolver] Enriched item result:`, enrichedItem)
+    return enrichedItem
   })
 }
 
@@ -183,17 +175,16 @@ export async function enrichItemsWithProductDetails(
  * Complete resolution pipeline: validate -> resolve -> enrich
  */
 export async function processTransactionItems(
-  items: InputItem[],
-  restaurantId: string
+  items: InputItem[]
 ) {
   // Step 1: Validate input
   validateItems(items)
 
   // Step 2: Resolve productIds
-  const resolvedItems = await resolveItemIds(items, restaurantId)
+  const resolvedItems = await resolveItemIds(items)
 
   // Step 3: Enrich with product details
-  const enrichedItems = await enrichItemsWithProductDetails(resolvedItems, restaurantId)
+  const enrichedItems = await enrichItemsWithProductDetails(resolvedItems)
 
   return enrichedItems
 }
