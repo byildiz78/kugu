@@ -3,6 +3,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { SearchableMultiSelect } from '@/components/ui/searchable-multi-select'
 import { Zap, ShoppingCart, Package, Utensils, Users, Gift, X } from 'lucide-react'
 import { CampaignFormProps, TRIGGER_TYPES } from './types'
 
@@ -104,36 +105,19 @@ export function CampaignFormStep2({
             
             <div>
               <Label>Hangi Ürünlerden?</Label>
-              <Select onValueChange={(value) => {
-                addToSelection(value, selectedProducts, setSelectedProducts)
-              }}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Ürün seçin" />
-                </SelectTrigger>
-                <SelectContent>
-                  {products.map((product) => (
-                    <SelectItem key={product.id} value={product.id}>
-                      {product.name} - {product.price}₺
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedProducts.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {selectedProducts.map((productId) => {
-                    const product = products.find(p => p.id === productId)
-                    return (
-                      <Badge key={productId} variant="secondary" className="flex items-center gap-1">
-                        {product?.name}
-                        <X 
-                          className="h-3 w-3 cursor-pointer" 
-                          onClick={() => removeFromSelection(productId, selectedProducts, setSelectedProducts)}
-                        />
-                      </Badge>
-                    )
-                  })}
-                </div>
-              )}
+              <SearchableMultiSelect
+                options={products.map(product => ({
+                  value: product.id,
+                  label: product.name,
+                  subtitle: `${product.category} - ${product.price}₺`
+                }))}
+                selectedValues={selectedProducts}
+                onSelectionChange={setSelectedProducts}
+                placeholder="Ürün arayın ve seçin..."
+                emptyText="Ürün bulunamadı"
+                maxDisplayed={20}
+                className="mt-1"
+              />
               <p className="text-xs text-gray-500 mt-1">Bu ürünlerden herhangi birinden belirlenen adet alınınca tetiklenir</p>
             </div>
           </div>
@@ -155,28 +139,19 @@ export function CampaignFormStep2({
             
             <div>
               <Label>Hangi Kategorilerden?</Label>
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                {categories.map((category) => (
-                  <div
-                    key={category}
-                    className={`p-3 border rounded cursor-pointer text-center ${
-                      selectedCategories.includes(category)
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                    onClick={() => {
-                      if (selectedCategories.includes(category)) {
-                        removeFromSelection(category, selectedCategories, setSelectedCategories)
-                      } else {
-                        addToSelection(category, selectedCategories, setSelectedCategories)
-                      }
-                    }}
-                  >
-                    <Utensils className="h-4 w-4 mx-auto mb-1" />
-                    <span className="text-sm">{category}</span>
-                  </div>
-                ))}
-              </div>
+              <SearchableMultiSelect
+                options={categories.map(category => ({
+                  value: category,
+                  label: category,
+                  subtitle: `${category} kategorisi`
+                }))}
+                selectedValues={selectedCategories}
+                onSelectionChange={setSelectedCategories}
+                placeholder="Kategori arayın ve seçin..."
+                emptyText="Kategori bulunamadı"
+                maxDisplayed={15}
+                className="mt-1"
+              />
               <p className="text-xs text-gray-500 mt-1">Bu kategorilerden toplam belirlenen adet alınınca tetiklenir</p>
             </div>
           </div>

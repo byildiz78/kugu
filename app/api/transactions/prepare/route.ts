@@ -3,14 +3,19 @@ import { prisma } from '@/lib/prisma'
 import { authenticateRequest } from '@/lib/auth-utils'
 import { z } from 'zod'
 import { CampaignManager } from '@/lib/campaign-manager'
+import { processTransactionItems } from '@/lib/utils/item-resolver'
 
 const prepareSchema = z.object({
   customerId: z.string(),
   items: z.array(z.object({
-    productId: z.string(),
+    productId: z.string().optional(),
+    menuItemKey: z.string().optional(),
     quantity: z.number().min(1),
-    unitPrice: z.number().min(0)
-  })),
+    unitPrice: z.number().min(0).optional() // Make optional for menuItemKey resolution
+  }).refine(
+    (item) => item.productId || item.menuItemKey,
+    "Either productId or menuItemKey must be provided"
+  )),
   location: z.enum(['restaurant', 'online']).optional()
 })
 
@@ -38,11 +43,30 @@ export async function POST(request: NextRequest) {
 
     const { customerId, items, location } = validationResult.data
 
-    // Calculate subtotal
-    const subtotal = items.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0)
+    // Get customer first to get restaurantId for item resolution
+    const customer = await prisma.customer.findUnique({
+      where: { id: customerId },
+      select: { restaurantId: true }
+    })
+
+    if (!customer) {
+      return NextResponse.json({
+        error: 'Customer not found',
+        message: `No customer found with ID: ${customerId}`
+      }, { status: 404 })
+    }
+
+    // Debug: Log customer restaurant ID
+    console.log(`[Prepare] Customer restaurant ID: ${customer.restaurantId}`)
+
+    // Process items: resolve menuItemKeys to productIds and enrich with product details
+    const resolvedItems = await processTransactionItems(items, customer.restaurantId)
+
+    // Calculate subtotal using resolved items with product prices
+    const subtotal = resolvedItems.reduce((sum, item) => sum + item.totalPrice, 0)
 
     // Get customer with all relations
-    const customer = await prisma.customer.findUnique({
+    const customerWithRelations = await prisma.customer.findUnique({
       where: { id: customerId },
       include: {
         tier: true,
@@ -67,7 +91,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    if (!customer) {
+    if (!customerWithRelations) {
       return NextResponse.json({
         error: 'Customer not found',
         message: `No customer found with ID: ${customerId}`
@@ -75,8 +99,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Get base point rate
-    const basePointRate = customer.restaurant.settings?.basePointRate || 0.1
-    const tierMultiplier = customer.tier?.pointMultiplier || 1.0
+    const basePointRate = customerWithRelations.restaurant.settings?.basePointRate || 0.1
+    const tierMultiplier = customerWithRelations.tier?.pointMultiplier || 1.0
 
     // Calculate points to earn
     const pointsToEarn = Math.floor(subtotal * basePointRate * tierMultiplier)
@@ -85,7 +109,7 @@ export async function POST(request: NextRequest) {
     const now = new Date()
     const allCampaigns = await prisma.campaign.findMany({
       where: {
-        restaurantId: customer.restaurantId,
+        restaurantId: customerWithRelations.restaurantId,
         isActive: true,
         startDate: { lte: now },
         endDate: { gte: now }
@@ -103,7 +127,7 @@ export async function POST(request: NextRequest) {
     for (const campaign of allCampaigns) {
       // Check segment targeting
       if (campaign.segments.length > 0) {
-        const customerSegmentIds = customer.segments.map(cs => cs.segmentId)
+        const customerSegmentIds = customerWithRelations.segments.map(cs => cs.segmentId)
         const campaignSegmentIds = campaign.segments.map(cs => cs.segmentId)
         const hasMatchingSegment = campaignSegmentIds.some(id => customerSegmentIds.includes(id))
 
@@ -167,7 +191,7 @@ export async function POST(request: NextRequest) {
     const eligibleStamps = []
     const stampCampaigns = await prisma.campaign.findMany({
       where: {
-        restaurantId: customer.restaurantId,
+        restaurantId: customerWithRelations.restaurantId,
         type: 'PRODUCT_BASED',
         isActive: true,
         startDate: { lte: now },
@@ -176,51 +200,80 @@ export async function POST(request: NextRequest) {
     })
 
     for (const campaign of stampCampaigns) {
-      const conditions = campaign.conditions as any
-      if (!conditions || !conditions.productIds || !Array.isArray(conditions.productIds) ||
-          !conditions.buyQuantity || !conditions.getQuantity) {
+      console.log('Processing stamp campaign:', campaign.id, campaign.name)
+      console.log('Campaign data:', {
+        buyQuantity: campaign.buyQuantity,
+        getQuantity: campaign.getQuantity,
+        targetProducts: campaign.targetProducts,
+        freeProducts: campaign.freeProducts
+      })
+
+      // Use direct schema fields like customer endpoint
+      if (!campaign.buyQuantity || !campaign.freeProducts) {
+        console.log('Skipping campaign due to missing buyQuantity or freeProducts')
         continue
       }
 
-      // Count stamps earned from past transactions
-      const earnedTransactions = await prisma.transaction.findMany({
+      // Parse target products (same as customer endpoint)
+      let targetProductIds: string[] = []
+      if (campaign.targetProducts) {
+        try {
+          targetProductIds = JSON.parse(campaign.targetProducts)
+        } catch (e) {
+          targetProductIds = []
+        }
+      }
+      const qualifyingTransactions = await prisma.transactionItem.findMany({
         where: {
-          customerId,
-          status: 'COMPLETED',
-          appliedCampaigns: {
-            some: { campaignId: campaign.id }
-          }
-        },
-        include: {
-          items: {
-            where: {
-              productId: { in: conditions.productIds }
+          transaction: {
+            customerId,
+            status: 'COMPLETED',
+            createdAt: {
+              gte: campaign.startDate || new Date(0)
             }
+          },
+          isFree: false, // Only count paid items for stamps
+          ...(targetProductIds.length > 0 && {
+            productId: { in: targetProductIds }
+          })
+        }
+      })
+
+      // Calculate total quantity purchased
+      const totalPurchased = qualifyingTransactions.reduce((sum, item) => sum + item.quantity, 0)
+      console.log(`Campaign ${campaign.name}: totalPurchased=${totalPurchased}, buyQuantity=${campaign.buyQuantity}`)
+
+      // Calculate stamps earned (how many complete sets of buyQuantity)
+      const totalStampsEarned = Math.floor(totalPurchased / (campaign.buyQuantity || 1))
+      console.log(`totalStampsEarned=${totalStampsEarned}`)
+
+      // Get how many times this campaign was already used (same as mobile/stamps)
+      const campaignUsages = await prisma.transactionCampaign.count({
+        where: {
+          campaignId: campaign.id,
+          transaction: {
+            customerId
           }
         }
       })
 
-      const totalPurchased = earnedTransactions.reduce((sum, tx) => {
-        return sum + tx.items.reduce((itemSum, item) => itemSum + item.quantity, 0)
-      }, 0)
-
-      const totalStampsEarned = Math.floor(totalPurchased / conditions.buyQuantity)
-
-      // Count stamps used - simplified approach
-      const usedStamps = await prisma.campaignUsage.count({
-        where: {
-          customerId,
-          campaignId: campaign.id,
-          discountAmount: { gt: 0 } // Stamp redemptions have discount amount > 0
-        }
-      })
-
-      const availableStamps = totalStampsEarned - usedStamps
-      const stampsNeeded = conditions.buyQuantity
+      // Calculate remaining stamps
+      const stampsUsed = campaignUsages
+      const availableStamps = Math.max(0, totalStampsEarned - stampsUsed)
+      console.log(`stampsUsed=${stampsUsed}, availableStamps=${availableStamps}`)
 
       if (availableStamps > 0) {
-        // Get product info for free item
-        const freeProductId = conditions.freeProductId || (conditions.productIds && conditions.productIds[0])
+        // Parse free products (same as customer endpoint)
+        let freeProductIds: string[] = []
+        if (campaign.freeProducts) {
+          try {
+            freeProductIds = JSON.parse(campaign.freeProducts)
+          } catch (e) {
+            freeProductIds = []
+          }
+        }
+
+        const freeProductId = freeProductIds[0] || (targetProductIds && targetProductIds[0])
         const freeProduct = await prisma.product.findFirst({
           where: { id: freeProductId },
           select: {
@@ -236,7 +289,7 @@ export async function POST(request: NextRequest) {
           campaignName: campaign.name,
           productName: freeProduct?.name || 'Ürün',
           availableStamps,
-          stampsNeeded,
+          stampsNeeded: 1, // Always 1 stamp needed to redeem
           canRedeem: availableStamps >= 1,
           freeProduct: {
             id: freeProductId,
@@ -249,7 +302,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get eligible rewards
-    const eligibleRewards = customer.rewards
+    const eligibleRewards = customerWithRelations.rewards
       .filter(cr => !cr.isRedeemed && cr.reward.isActive)
       .map(cr => ({
         id: cr.reward.id,
@@ -263,9 +316,9 @@ export async function POST(request: NextRequest) {
     // Add point-purchasable rewards
     const pointRewards = await prisma.reward.findMany({
       where: {
-        restaurantId: customer.restaurantId,
+        restaurantId: customerWithRelations.restaurantId,
         isActive: true,
-        pointsCost: { lte: customer.points }
+        pointsCost: { lte: customerWithRelations.points }
         // minTierNewId filter removed for now - will add proper tier filtering later
       }
     })
@@ -286,20 +339,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate max point discount (typically 50% of order or available points)
-    const maxPointValue = customer.points * 0.1 // 1 point = 0.1 TL
+    const maxPointValue = customerWithRelations.points * 0.1 // 1 point = 0.1 TL
     const maxPointDiscount = Math.min(maxPointValue, subtotal * 0.5)
 
     // Prepare response
     const response = {
       customer: {
-        id: customer.id,
-        name: customer.name,
-        availablePoints: customer.points,
-        tier: customer.tier ? {
-          id: customer.tier.id,
-          name: customer.tier.name,
-          displayName: customer.tier.displayName,
-          pointMultiplier: customer.tier.pointMultiplier
+        id: customerWithRelations.id,
+        name: customerWithRelations.name,
+        availablePoints: customerWithRelations.points,
+        tier: customerWithRelations.tier ? {
+          id: customerWithRelations.tier.id,
+          name: customerWithRelations.tier.name,
+          displayName: customerWithRelations.tier.displayName,
+          pointMultiplier: customerWithRelations.tier.pointMultiplier
         } : null
       },
       eligibleCampaigns,

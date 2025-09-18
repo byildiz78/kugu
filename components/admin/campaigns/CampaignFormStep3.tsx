@@ -3,6 +3,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { SearchableMultiSelect } from '@/components/ui/searchable-multi-select'
 import { Gift, Percent, Package, Zap, X } from 'lucide-react'
 import { CampaignFormProps, REWARD_TYPES } from './types'
 
@@ -97,35 +98,20 @@ export function CampaignFormStep3({
         {selectedRewardType === 'free_product' && (
           <div>
             <Label>Bedava Verilecek Ürünler</Label>
-            <Select onValueChange={(value) => addToSelection(value, selectedFreeProducts, setSelectedFreeProducts)}>
-              <SelectTrigger className="mt-1">
-                <SelectValue placeholder="Bedava ürün seçin" />
-              </SelectTrigger>
-              <SelectContent>
-                {products.map((product) => (
-                  <SelectItem key={product.id} value={product.id}>
-                    {product.name} - {product.price}₺
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {selectedFreeProducts.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {selectedFreeProducts.map((productId) => {
-                  const product = products.find(p => p.id === productId)
-                  return (
-                    <Badge key={productId} variant="secondary" className="flex items-center gap-1">
-                      <Gift className="h-3 w-3" />
-                      {product?.name}
-                      <X 
-                        className="h-3 w-3 cursor-pointer" 
-                        onClick={() => removeFromSelection(productId, selectedFreeProducts, setSelectedFreeProducts)}
-                      />
-                    </Badge>
-                  )
-                })}
-              </div>
-            )}
+            <SearchableMultiSelect
+              options={products.map(product => ({
+                value: product.id,
+                label: product.name,
+                subtitle: `${product.category} - ${product.price}₺`
+              }))}
+              selectedValues={selectedFreeProducts}
+              onSelectionChange={setSelectedFreeProducts}
+              placeholder="Bedava verilecek ürünleri arayın ve seçin..."
+              emptyText="Ürün bulunamadı"
+              maxDisplayed={20}
+              className="mt-1"
+            />
+            <p className="text-xs text-gray-500 mt-1">Seçilen ürünler müşteriye bedava verilecek</p>
           </div>
         )}
 

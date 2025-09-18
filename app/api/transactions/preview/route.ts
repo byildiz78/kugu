@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { authenticateRequest } from '@/lib/auth-utils'
 import { z } from 'zod'
 import { CampaignManager } from '@/lib/campaign-manager'
+import { processTransactionItems } from '@/lib/utils/item-resolver'
 import {
   reservationTokenService,
   TransactionItem,
@@ -14,13 +15,16 @@ import {
 const previewSchema = z.object({
   customerId: z.string(),
   items: z.array(z.object({
-    productId: z.string(),
-    productName: z.string(),
+    productId: z.string().optional(),
     menuItemKey: z.string().optional(),
+    productName: z.string().optional(),
     category: z.string().optional(),
     quantity: z.number().min(1),
-    unitPrice: z.number().min(0)
-  })),
+    unitPrice: z.number().min(0).optional()
+  }).refine(
+    (item) => item.productId || item.menuItemKey,
+    "Either productId or menuItemKey must be provided"
+  )),
   selections: z.object({
     usePoints: z.number().min(0).optional(),
     campaignIds: z.array(z.string()).optional(),
@@ -53,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     const { customerId, items, selections } = validationResult.data
 
-    // Get customer with all necessary relations
+    // Get customer first to get restaurantId for item resolution
     const customer = await prisma.customer.findUnique({
       where: { id: customerId },
       include: {
@@ -71,22 +75,28 @@ export async function POST(request: NextRequest) {
       }, { status: 404 })
     }
 
-    // Initialize calculation variables
-    const subtotal = items.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0)
+    // Debug: Log customer restaurant ID
+    console.log(`[Preview] Customer restaurant ID: ${customer.restaurantId}`)
+
+    // Process items: resolve menuItemKeys to productIds and enrich with product details if needed
+    const resolvedItems = await processTransactionItems(items, customer.restaurantId)
+
+    // Initialize calculation variables - use resolved items for accurate pricing
+    const subtotal = resolvedItems.reduce((sum, item) => sum + item.totalPrice, 0)
     let totalDiscount = 0
     let finalAmount = subtotal
     const warnings: string[] = []
     const errors: string[] = []
 
-    // Prepare transaction items
-    const transactionItems: TransactionItem[] = items.map(item => ({
+    // Prepare transaction items using resolved data
+    const transactionItems: TransactionItem[] = resolvedItems.map(item => ({
       productId: item.productId,
       productName: item.productName,
       menuItemKey: item.menuItemKey || null,
       category: item.category,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
-      totalPrice: item.unitPrice * item.quantity,
+      totalPrice: item.totalPrice,
       discountAmount: 0,
       isFree: false
     }))
