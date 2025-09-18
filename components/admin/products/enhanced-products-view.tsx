@@ -18,16 +18,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { 
-  Package, 
-  Search, 
+import {
+  Package,
+  Search,
   Filter,
   MoreHorizontal,
   Edit,
   Trash2,
   Eye,
   TrendingUp,
-  DollarSign,
   Tag,
   CheckCircle,
   XCircle,
@@ -43,7 +42,8 @@ import {
   Wine,
   Pizza,
   Sandwich,
-  Salad
+  Salad,
+  Key
 } from 'lucide-react'
 import { Product } from '@prisma/client'
 import { format } from 'date-fns'
@@ -60,7 +60,6 @@ interface ProductStats {
   active: number
   inactive: number
   categories: number
-  averagePrice: number
 }
 
 interface EnhancedProductsViewProps {
@@ -135,12 +134,6 @@ export function EnhancedProductsView({
 }: EnhancedProductsViewProps) {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
 
-  const formatPrice = (price: number) => {
-    return price.toLocaleString('tr-TR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    })
-  }
 
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), 'dd MMM yyyy', { locale: tr })
@@ -188,14 +181,6 @@ export function EnhancedProductsView({
       icon: Tag,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50'
-    },
-    {
-      title: 'Ortalama Fiyat',
-      value: `${stats.averagePrice.toFixed(0)}₺`,
-      description: 'Ürün başına ortalama',
-      icon: DollarSign,
-      color: 'text-amber-600',
-      bgColor: 'bg-amber-50'
     }
   ]
 
@@ -360,12 +345,6 @@ export function EnhancedProductsView({
                           </div>
                         </div>
                         {/* Price */}
-                        <div className="text-center bg-white/20 rounded-lg px-3 py-2 backdrop-blur-sm">
-                          <div className="text-xl font-bold text-white">
-                            {formatPrice(product.price)}₺
-                          </div>
-                          <div className="text-xs text-white/80">fiyat</div>
-                        </div>
                       </div>
                     </div>
                     
@@ -375,7 +354,15 @@ export function EnhancedProductsView({
                       <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed min-h-[2.5rem]">
                         {product.description || 'Bu ürün için henüz açıklama eklenmemiş.'}
                       </p>
-                      
+
+                      {/* MenuItemKey if exists */}
+                      {product.menuItemKey && (
+                        <div className="flex items-center gap-2 text-xs bg-gray-50 px-2 py-1 rounded border border-gray-200">
+                          <Key className="h-3 w-3 text-gray-500" />
+                          <span className="font-mono text-gray-700">{product.menuItemKey}</span>
+                        </div>
+                      )}
+
                       {/* Status and Date */}
                       <div className="flex items-center justify-between pt-2 border-t">
                         <div className="flex items-center gap-2">
@@ -471,9 +458,15 @@ export function EnhancedProductsView({
                             {React.cloneElement(getCategoryIcon(product.category), { className: 'h-3 w-3 mr-1' })}
                             {product.category}
                           </Badge>
+                          {product.menuItemKey && (
+                            <Badge variant="outline" className="text-xs border-gray-300 shrink-0">
+                              <Key className="h-3 w-3 mr-1" />
+                              <span className="font-mono">{product.menuItemKey}</span>
+                            </Badge>
+                          )}
                           <Badge className={`text-xs border shrink-0 ${
-                            product.isActive 
-                              ? 'bg-green-100 text-green-800 border-green-200' 
+                            product.isActive
+                              ? 'bg-green-100 text-green-800 border-green-200'
                               : 'bg-red-100 text-red-800 border-red-200'
                           }`}>
                             {product.isActive ? 'Aktif' : 'Pasif'}
@@ -485,12 +478,6 @@ export function EnhancedProductsView({
                       </div>
                       
                       {/* Price */}
-                      <div className="text-center bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-100 px-4 py-2 shrink-0">
-                        <div className="text-lg font-bold text-green-700">
-                          {formatPrice(product.price)}₺
-                        </div>
-                        <div className="text-xs text-green-600 font-medium">fiyat</div>
-                      </div>
                       
                       {/* Date */}
                       <div className="text-center text-sm shrink-0 min-w-[80px]">

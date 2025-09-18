@@ -15,35 +15,30 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { customerId, all = false } = body
+    const { customerId, all = false, customerIds = [] } = body
 
-    if (!customerId && !all) {
-      return NextResponse.json({ 
-        error: 'Either customerId or all flag must be provided' 
+    // Accept either single customerId, array of customerIds, or all flag
+    if (!customerId && !all && (!customerIds || customerIds.length === 0)) {
+      return NextResponse.json({
+        error: 'Either customerId, customerIds array, or all flag must be provided'
       }, { status: 400 })
     }
 
     let results = []
+    let customersToProcess = []
 
     if (all) {
       // Recalculate for all customers
-      const customers = await prisma.customer.findMany({
+      customersToProcess = await prisma.customer.findMany({
         select: { id: true, points: true, name: true, email: true }
       })
-
-      for (const customer of customers) {
-        const result = await recalculateCustomerPoints(customer.id)
-        results.push({
-          customerId: customer.id,
-          name: customer.name,
-          email: customer.email,
-          oldPoints: customer.points,
-          newPoints: result.newPoints,
-          difference: result.difference,
-          status: result.status
-        })
-      }
-    } else {
+    } else if (customerIds && customerIds.length > 0) {
+      // Recalculate for multiple customers
+      customersToProcess = await prisma.customer.findMany({
+        where: { id: { in: customerIds } },
+        select: { id: true, points: true, name: true, email: true }
+      })
+    } else if (customerId) {
       // Recalculate for single customer
       const customer = await prisma.customer.findUnique({
         where: { id: customerId },
@@ -54,7 +49,12 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
       }
 
-      const result = await recalculateCustomerPoints(customerId)
+      customersToProcess = [customer]
+    }
+
+    // Process all customers
+    for (const customer of customersToProcess) {
+      const result = await recalculateCustomerPoints(customer.id)
       results.push({
         customerId: customer.id,
         name: customer.name,

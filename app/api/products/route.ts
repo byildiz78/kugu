@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
       where.isActive = status === 'ACTIVE'
     }
 
-    const [products, total] = await Promise.all([
+    const [products, total, activeCount, inactiveCount, categories] = await Promise.all([
       prisma.product.findMany({
         where,
         skip,
@@ -62,7 +62,25 @@ export async function GET(request: NextRequest) {
         },
         orderBy: { createdAt: 'desc' }
       }),
-      prisma.product.count({ where })
+      prisma.product.count({ where }),
+      // Calculate stats for all products (not just current page)
+      prisma.product.count({
+        where: {
+          ...where,
+          isActive: true
+        }
+      }),
+      prisma.product.count({
+        where: {
+          ...where,
+          isActive: false
+        }
+      }),
+      prisma.product.findMany({
+        where,
+        select: { category: true },
+        distinct: ['category']
+      })
     ])
 
     return NextResponse.json({
@@ -72,6 +90,12 @@ export async function GET(request: NextRequest) {
         limit,
         total,
         totalPages: Math.ceil(total / limit)
+      },
+      stats: {
+        total,
+        active: activeCount,
+        inactive: inactiveCount,
+        categories: categories.length
       }
     })
   } catch (error) {

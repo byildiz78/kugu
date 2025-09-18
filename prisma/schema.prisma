@@ -378,12 +378,14 @@ model Product {
 }
 
 model Settings {
-  id            String     @id @default(cuid())
-  basePointRate Float      @default(0.1)
-  restaurantId  String     @unique
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+  id                   String     @id @default(cuid())
+  basePointRate        Float      @default(0.1)
+  menuItemsBearerToken String?    // POS API Bearer Token
+  menuItemsQuery       String?    // POS API Query
+  restaurantId         String     @unique
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+  restaurant           Restaurant @relation(fields: [restaurantId], references: [id])
 }
 
 enum CampaignType {

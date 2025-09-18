@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Plus } from 'lucide-react'
+import { Plus, RefreshCw } from 'lucide-react'
 import { EnhancedProductsView } from '@/components/admin/products/enhanced-products-view'
 import { ProductForm } from '@/components/admin/products/product-form'
+import { SyncModal } from '@/components/admin/products/sync-modal'
 import { Product } from '@prisma/client'
 import { toast } from 'sonner'
 
@@ -19,7 +20,6 @@ interface ProductStats {
   active: number
   inactive: number
   categories: number
-  averagePrice: number
 }
 
 export default function ProductsPage() {
@@ -28,12 +28,12 @@ export default function ProductsPage() {
     total: 0,
     active: 0,
     inactive: 0,
-    categories: 0,
-    averagePrice: 0
+    categories: 0
   })
   const [loading, setLoading] = useState(true)
   const [formOpen, setFormOpen] = useState(false)
   const [formLoading, setFormLoading] = useState(false)
+  const [syncModalOpen, setSyncModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<ProductWithDetails | null>(null)
 
   // Filters
@@ -60,22 +60,9 @@ export default function ProductsPage() {
       const data = await response.json()
       setProducts(data.products)
       setTotalPages(data.pagination.totalPages)
-      
-      // Calculate stats
-      const activeProducts = data.products.filter((p: ProductWithDetails) => p.isActive)
-      const inactiveProducts = data.products.filter((p: ProductWithDetails) => !p.isActive)
-      const categories = Array.from(new Set(data.products.map((p: ProductWithDetails) => p.category)))
-      const averagePrice = data.products.length > 0 
-        ? data.products.reduce((sum: number, p: ProductWithDetails) => sum + p.price, 0) / data.products.length
-        : 0
-      
-      setStats({
-        total: data.pagination.total,
-        active: activeProducts.length,
-        inactive: inactiveProducts.length,
-        categories: categories.length,
-        averagePrice
-      })
+
+      // Use stats from API (calculated for all products, not just current page)
+      setStats(data.stats)
     } catch (error) {
       console.error('Error fetching products:', error)
       toast.error('Ürünler yüklenirken hata oluştu')
@@ -188,6 +175,10 @@ export default function ProductsPage() {
     setCurrentPage(page)
   }
 
+  const handleSyncComplete = () => {
+    fetchProducts() // Refresh product list
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -195,10 +186,20 @@ export default function ProductsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Ürün Yönetimi</h1>
           <p className="text-gray-600">Menü ürünlerinizi yönetin ve fiyatlandırın</p>
         </div>
-        <Button onClick={() => setFormOpen(true)} className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700">
-          <Plus className="mr-2 h-4 w-4" />
-          Yeni Ürün
-        </Button>
+        <div className="flex gap-3">
+          <Button
+            onClick={() => setSyncModalOpen(true)}
+            variant="outline"
+            className="border-blue-600 text-blue-600 hover:bg-blue-50"
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Ürünleri Senkronize Et
+          </Button>
+          <Button onClick={() => setFormOpen(true)} className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700">
+            <Plus className="mr-2 h-4 w-4" />
+            Yeni Ürün
+          </Button>
+        </div>
       </div>
 
       {/* Enhanced Products View */}
@@ -228,6 +229,13 @@ export default function ProductsPage() {
         onSubmit={editingProduct ? handleUpdateProduct : handleCreateProduct}
         product={editingProduct}
         isLoading={formLoading}
+      />
+
+      {/* Sync Modal */}
+      <SyncModal
+        open={syncModalOpen}
+        onOpenChange={setSyncModalOpen}
+        onComplete={handleSyncComplete}
       />
     </div>
   )

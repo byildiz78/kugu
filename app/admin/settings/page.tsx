@@ -4,14 +4,16 @@ import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { 
-  Users, 
-  Coins
+import {
+  Users,
+  Coins,
+  Database
 } from 'lucide-react'
 import { UserManagement } from '@/components/admin/settings/user-management'
 import { PointSystem } from '@/components/admin/settings/point-system'
+import { DbOperations } from '@/components/admin/settings/db-operations'
 
-type SettingsTab = 'users' | 'points'
+type SettingsTab = 'users' | 'points' | 'database'
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('users')
@@ -34,6 +36,15 @@ export default function SettingsPage() {
       color: 'text-orange-600',
       bgColor: 'bg-orange-50',
       badge: 'Yeni'
+    },
+    {
+      id: 'database' as SettingsTab,
+      title: 'DB İşlemleri',
+      description: 'Veritabanı bakım işlemleri',
+      icon: Database,
+      color: 'text-red-600',
+      bgColor: 'bg-red-50',
+      badge: 'Süper Admin'
     }
   ]
 
@@ -43,6 +54,8 @@ export default function SettingsPage() {
         return <UserManagement />
       case 'points':
         return <PointSystem />
+      case 'database':
+        return <DbOperations />
       default:
         return null
     }
