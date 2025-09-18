@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto'
 export interface TransactionItem {
   productId: string
   productName: string
+  menuItemKey?: string | null
   category?: string
   quantity: number
   unitPrice: number

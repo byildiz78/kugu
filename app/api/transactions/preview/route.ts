@@ -16,6 +16,7 @@ const previewSchema = z.object({
   items: z.array(z.object({
     productId: z.string(),
     productName: z.string(),
+    menuItemKey: z.string().optional(),
     category: z.string().optional(),
     quantity: z.number().min(1),
     unitPrice: z.number().min(0)
@@ -81,6 +82,7 @@ export async function POST(request: NextRequest) {
     const transactionItems: TransactionItem[] = items.map(item => ({
       productId: item.productId,
       productName: item.productName,
+      menuItemKey: item.menuItemKey || null,
       category: item.category,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
@@ -277,14 +279,22 @@ export async function POST(request: NextRequest) {
           }
         }
         const freeProduct = await prisma.product.findFirst({
-          where: { id: freeProductId }
+          where: { id: freeProductId },
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            menuItemKey: true
+          }
         })
 
         const stampValue = freeProduct?.price || 0
 
         stampProducts.push({
           campaignId,
+          productId: freeProductId,
           productName: freeProduct?.name || 'Bedava Ürün',
+          menuItemKey: freeProduct?.menuItemKey || null,
           value: stampValue,
           quantity: 1
         })
@@ -301,6 +311,7 @@ export async function POST(request: NextRequest) {
         transactionItems.push({
           productId: freeProductId,
           productName: freeProduct?.name || 'Bedava Ürün',
+          menuItemKey: freeProduct?.menuItemKey || null,
           category: freeProduct?.category,
           quantity: 1,
           unitPrice: stampValue,

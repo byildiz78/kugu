@@ -11,6 +11,7 @@ import { authenticateRequest } from '@/lib/auth-utils'
 const transactionItemSchema = z.object({
   productId: z.string(),
   productName: z.string(),
+  menuItemKey: z.string().optional(),
   category: z.string().optional(),
   quantity: z.number().min(1),
   unitPrice: z.number().min(0),

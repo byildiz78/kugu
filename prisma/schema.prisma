@@ -336,6 +336,7 @@ model TransactionItem {
   transactionId  String
   productId      String
   productName    String
+  menuItemKey    String?     // POS integration key
   category       String?
   quantity       Int
   unitPrice      Float
@@ -366,12 +367,14 @@ model Product {
   category     String
   price        Float
   isActive     Boolean    @default(true)
+  menuItemKey  String?    // POS integration key
   restaurantId String
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
 
   @@unique([name, restaurantId])
+  @@unique([menuItemKey, restaurantId])
 }
 
 model Settings {

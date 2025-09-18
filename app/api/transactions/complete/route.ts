@@ -119,6 +119,7 @@ export async function POST(request: NextRequest) {
             create: reservationData.items.map(item => ({
               productId: item.productId,
               productName: item.productName,
+              menuItemKey: item.menuItemKey || null,
               category: item.category,
               quantity: item.quantity,
               unitPrice: item.unitPrice,
@@ -164,6 +165,7 @@ export async function POST(request: NextRequest) {
 
       // 3. Record stamp redemptions
       for (const stamp of reservationData.usedStamps) {
+        // Record in CampaignUsage for reporting
         await tx.campaignUsage.create({
           data: {
             customerId: reservationData.customerId,
@@ -171,6 +173,21 @@ export async function POST(request: NextRequest) {
             orderAmount: reservationData.calculations.subtotal,
             discountAmount: stamp.value, // Value of the free product
             usedAt: new Date()
+          }
+        })
+
+        // Record in TransactionCampaign for stamp counting
+        await tx.transactionCampaign.create({
+          data: {
+            transactionId: newTransaction.id,
+            campaignId: stamp.campaignId,
+            discountAmount: stamp.value,
+            pointsEarned: 0,
+            freeItems: JSON.stringify([{
+              productName: stamp.productName,
+              quantity: stamp.quantity,
+              value: stamp.value
+            }])
           }
         })
       }
@@ -377,7 +394,9 @@ export async function POST(request: NextRequest) {
       achievements: achievements.length > 0 ? achievements : undefined,
       receipt: {
         items: reservationData.items.map(item => ({
+          productId: item.productId,
           name: item.productName,
+          menuItemKey: item.menuItemKey || null,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           totalPrice: item.totalPrice,

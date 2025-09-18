@@ -33,7 +33,8 @@ import {
   Sandwich,
   Salad,
   CheckCircle,
-  XCircle
+  XCircle,
+  Key
 } from 'lucide-react'
 import { Product } from '@prisma/client'
 import { useForm } from 'react-hook-form'
@@ -307,6 +308,27 @@ export function ProductForm({ open, onOpenChange, onSubmit, product, isLoading }
                   Ürününüz hakkında müşterilere yardımcı olacak bilgiler ekleyin
                 </p>
               </div>
+
+              {/* MenuItemKey Display (Read-only) */}
+              {product?.menuItemKey && (
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Key className="h-4 w-4" />
+                    POS Ürün Anahtarı
+                  </Label>
+                  <div className="p-3 bg-gray-50 rounded-lg border">
+                    <div className="flex items-center gap-2">
+                      <Key className="h-4 w-4 text-gray-500" />
+                      <code className="text-sm font-mono text-gray-700 bg-white px-2 py-1 rounded border">
+                        {product.menuItemKey}
+                      </code>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      POS sistemi ile entegrasyon için kullanılan benzersiz anahtar
+                    </p>
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">

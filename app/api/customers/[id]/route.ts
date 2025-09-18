@@ -126,7 +126,8 @@ async function calculateStampEntitlements(customerId: string, restaurantId: stri
         id: true,
         name: true,
         price: true,
-        category: true
+        category: true,
+        menuItemKey: true
       }
     })
 
@@ -145,6 +146,7 @@ async function calculateStampEntitlements(customerId: string, restaurantId: stri
           name: product.name,
           price: product.price,
           category: product.category,
+          menuItemKey: product.menuItemKey,
           availableQuantity: totalFreeItems // Each stamp gives access to getQuantity free items
         }))
       })

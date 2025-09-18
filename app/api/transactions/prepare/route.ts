@@ -222,7 +222,13 @@ export async function POST(request: NextRequest) {
         // Get product info for free item
         const freeProductId = conditions.freeProductId || (conditions.productIds && conditions.productIds[0])
         const freeProduct = await prisma.product.findFirst({
-          where: { id: freeProductId }
+          where: { id: freeProductId },
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            menuItemKey: true
+          }
         })
 
         eligibleStamps.push({
@@ -235,6 +241,7 @@ export async function POST(request: NextRequest) {
           freeProduct: {
             id: freeProductId,
             name: freeProduct?.name || 'Ürün',
+            menuItemKey: freeProduct?.menuItemKey || null,
             value: freeProduct?.price || 0
           }
         })
